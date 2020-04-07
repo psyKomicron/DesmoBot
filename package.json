@@ -1,0 +1,35 @@
+{
+  "name": "desmo-bot",
+  "version": "0.1.0",
+  "description": "DesmoBot",
+  "main": "app.js",
+  "author": "psyKomicron",
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "devDependencies": {
+    "@types/node": "^13.11.0",
+    "node": "13.12.0",
+    "typescript": "^3.9.0-dev.20200406"
+  },
+  "dependencies": {
+    "discord.js": "12.1.1",
+    "express": "^4.17.1",
+    "request": "^2.88.2",
+    "ws": "^7.2.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/psyKomicron/Julie-v2.git"
+  },
+  "keywords": [
+    "#node",
+    "#discord"
+  ],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/psyKomicron/Julie-v2/issues"
+  },
+  "homepage": "https://github.com/psyKomicron/Julie-v2#readme"
+}
