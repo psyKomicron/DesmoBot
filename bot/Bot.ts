@@ -1,5 +1,6 @@
 import Discord = require('discord.js');
-import { TokenReader } from './TokenReader';
+import fs = require('fs');
+import { TokenReader, EmojiReader } from './Readers';
 import { Speaker, Reply } from '../lang/Speaker';
 import { Downloader } from '../network/Downloader';
 
@@ -9,10 +10,9 @@ export class Bot
     private prefix: string = "/";
     // discord
     private client: Discord.Client = new Discord.Client();
-    private channel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel;
     // external
-    private reader: TokenReader = new TokenReader();
     private speaker: Speaker = Speaker.init("IT");
+    private emojiReader: EmojiReader = new EmojiReader();
 
     public constructor() 
     {
@@ -22,57 +22,55 @@ export class Bot
     private init(): void
     {
         this.client.on("ready", () => { console.log("ready"); });
-        this.client.on("guildMemberAdd", () => { this.greet(); });
+        //this.client.on("guildMemberAdd", () => { this.greet(); });
         this.client.on("message", (message) => { this.onMessage(message); });
-        this.client.login(this.reader.getToken());
-    }
-
-    public sendMessage(content: string): void
-    {
-        this.channel.send(content);
+        this.client.login(TokenReader.getToken());
     }
 
     private onMessage(message: Discord.Message): void 
     {
         let content = message.content;
+        let channel = message.channel;
         if (!content.startsWith(this.prefix)) return;
-        this.channel = message.channel;
         let command = content.split(/ /g);
         console.log(command.length);
         switch (command[1])
         {
             case "download":
                 let pcmd = this.parseMessage(command);
-                let limit = pcmd[0];
+                let limit = pcmd[0];    
                 let type = pcmd[1];
-                message.reply(this.speaker.translate(Reply.DL_START))
-                    .then(response =>
-                    {
-                        if (response.deletable) response.delete({ timeout: 2000 });
-                        if (message.deletable) message.delete({ timeout: 2000 });
-                    });
+                message.react(this.emojiReader.getEmoji("thinking"));
                 console.log("downloading " + limit + " " + type + " files");
-                this.initiateDownload(limit, type)
-                    .then(n => console.log("Downloaded : " + n));
+                this.initiateDownload(limit, type, channel)
+                    .then(n =>
+                    {
+                        console.log("Downloaded : " + n);
+                        message.react(this.emojiReader.getEmoji("green_check"));
+                        if (message.deletable) message.delete({ timeout: 3000 });
+                    });
                 break;
             case "delete":
-                this.deleteBulk();
+                if (channel instanceof Discord.TextChannel)
+                    this.deleteBulk(channel);
+                else
+                    channel.send("cannot delete messages");
                 break;
             default:
-                this.channel.send(this.speaker.translate(Reply.WRONG_COMMAND));
+                message.reply(this.speaker.translate(Reply.WRONG_COMMAND));
                 break;
         }
     }
 
-    private async initiateDownload(numberOfFiles: number, type: FileType): Promise<number>
+    private async initiateDownload(numberOfFiles: number, type: FileType, channel: Discord.Channel): Promise<number>
     {
         let downloader = new Downloader();
-        let totalDownloads: number = 0;
-        let limit = numberOfFiles > 50 ? 50 : numberOfFiles;
         let lastMessageID: Discord.Snowflake = null;
-        if (this.channel instanceof Discord.TextChannel)
+        let limit = numberOfFiles > 50 ? 50 : numberOfFiles;
+        let totalDownloads: number = 0;
+        if (channel instanceof Discord.TextChannel)
         {
-            let messages = await this.channel.messages.fetch({ limit: limit });
+            let messages = await channel.messages.fetch({ limit: limit });
             let filteredMessages = messages.filter(v => v.attachments.size > 0);
             console.log("found " + filteredMessages.size + " messages with attachements");
             let urls = this.hydrateUrls(filteredMessages, type);
@@ -88,18 +86,21 @@ export class Bot
                 }
                 else
                 {
-                    messages = await this.channel.messages.fetch({limit: limit, before: lastMessageID });
+                    messages = await channel.messages.fetch({limit: limit, before: lastMessageID });
                     filteredMessages = messages.filter(v => v.attachments.size > 0);
-                    console.log("\tfound " + filteredMessages.size + " messages with attachements");
                     let newUrls = this.hydrateUrls(filteredMessages, type);
                     newUrls.forEach(v => urls.push(v));
                     console.log("\tnow have " + urls.length + " matching files");
                 }
             }
+            let filepath = "./files/" + channel.name;
+            console.log("\ndownloading in " + filepath);
+            fs.mkdir(filepath, { recursive: true }, (err) => { if (err) throw err; });
+            filepath += "/";
             for (let i: number = 0; i < numberOfFiles; i++, totalDownloads++)
             {
                 if (urls[i] != undefined)
-                    downloader.download(urls[i]);
+                    downloader.download(urls[i], filepath);
             }
         }
         return totalDownloads;
@@ -107,7 +108,7 @@ export class Bot
 
     private parseMessage(command: string[]): [number, FileType]
     {
-        let limit = 100;
+        let limit = 50;
         let type = FileType.FILE;
         if (command.length > 2)
         {
@@ -195,14 +196,9 @@ export class Bot
         return type;
     }
 
-    private greet(): void
+    private deleteBulk(channel: Discord.TextChannel): void
     {
-        this.channel.send("Benvenuto cavaliere !");
-    }
-
-    private deleteBulk(): void
-    {
-        this.channel.bulkDelete(10);
+        channel.bulkDelete(10);
     }
 }
 

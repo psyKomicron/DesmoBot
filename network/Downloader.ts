@@ -4,10 +4,9 @@ import Discord = require('discord.js');
 
 export class Downloader
 {
-    public download(url: string)
+    public download(url: string, filepath: string)
     {
-        // au lieu de foreach => for explicit
-        let path = "./files/" + Downloader.getFileName(url);
+        let path = filepath + Downloader.getFileName(url);
         let file = fs.createWriteStream(path);
         let req = request.get(url);
         req.on("response", (response) =>

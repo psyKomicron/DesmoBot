@@ -2,7 +2,8 @@ import fs = require('fs');
 
 export class TokenReader
 {
-    getToken(): string {
+    static getToken(): string 
+    {
         let str = "";
         try {
             str = fs.readFileSync("./node_modules/token.txt", "UTF-8");
@@ -11,5 +12,14 @@ export class TokenReader
             str = "";
         }
         return str;
+    }
+}
+
+export class EmojiReader
+{
+    getEmoji(name: string): string
+    {
+        let res = fs.readFileSync("./bot/emojis/" + name + ".txt", "UTF-8");
+        return res;
     }
 }
