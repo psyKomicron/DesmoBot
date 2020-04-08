@@ -46,8 +46,9 @@ export class Bot
                 let limit = pcmd[0];
                 let type = pcmd[1];
                 message.reply(this.speaker.translate(Reply.DL_START))
-                    .then(message =>
+                    .then(response =>
                     {
+                        if (response.deletable) response.delete({ timeout: 2000 });
                         if (message.deletable) message.delete({ timeout: 2000 });
                     });
                 console.log("downloading " + limit + " " + type + " files");
@@ -66,28 +67,39 @@ export class Bot
     private async initiateDownload(numberOfFiles: number, type: FileType): Promise<number>
     {
         let downloader = new Downloader();
-        let totalDownloads: number;
-        let limit = numberOfFiles > 100 ? 100 : numberOfFiles;
+        let totalDownloads: number = 0;
+        let limit = numberOfFiles > 50 ? 50 : numberOfFiles;
         let lastMessageID: Discord.Snowflake = null;
-
         if (this.channel instanceof Discord.TextChannel)
         {
-            while (numberOfFiles > totalDownloads)
+            let messages = await this.channel.messages.fetch({ limit: limit });
+            let filteredMessages = messages.filter(v => v.attachments.size > 0);
+            console.log("found " + filteredMessages.size + " messages with attachements");
+            let urls = this.hydrateUrls(filteredMessages, type);
+            console.log("now have " + urls.length + " matching files");
+            while (urls.length < numberOfFiles) // fetching all requested urls
             {
-                let messages = await this.channel.messages.fetch({ limit: limit, before: lastMessageID });
-                let filteredMessages = messages.filter(message =>
+                console.log("not enough urls found, searching deeper");
+                lastMessageID = await messages.last()?.id;
+                if (lastMessageID == undefined)
                 {
-                    return message.attachments.has("url");
-                });
-                lastMessageID = messages.last().id;
-                console.log("messages with attachements : " + filteredMessages.size);
-                let urls = this.hydrateUrls(messages, type);
-                console.log("messages with correct file type : " + urls.length);
-                let res = downloader.download(urls);
-                totalDownloads += res;
-                limit -= res;
-                console.log("downloaded " + totalDownloads + ", remaining files " + limit);
-                console.log("last message parsed : " + messages.last().content);
+                    console.log("not more messages to parse, breaking");
+                    break;
+                }
+                else
+                {
+                    messages = await this.channel.messages.fetch({limit: limit, before: lastMessageID });
+                    filteredMessages = messages.filter(v => v.attachments.size > 0);
+                    console.log("\tfound " + filteredMessages.size + " messages with attachements");
+                    let newUrls = this.hydrateUrls(filteredMessages, type);
+                    newUrls.forEach(v => urls.push(v));
+                    console.log("\tnow have " + urls.length + " matching files");
+                }
+            }
+            for (let i: number = 0; i < numberOfFiles; i++, totalDownloads++)
+            {
+                if (urls[i] != undefined)
+                    downloader.download(urls[i]);
             }
         }
         return totalDownloads;
@@ -130,23 +142,6 @@ export class Bot
         }
         return [limit, type];
     }
-
-    /*
-    this.channel.fetchMessages({ limit: limit > 100 ? 100 : limit, before: before })
-            .then(messages =>
-            {
-                let filteredMessages = messages.filter(message =>
-                {
-                    return message.attachments.size > 0;
-                });
-                console.log("messages with attachements : " + filteredMessages.size);
-                totalDownloads[1] = filteredMessages.last();
-                let urls = this.hydrateUrls(filteredMessages, type);
-                console.log("messages with correct file type : " + urls.length);
-                totalDownloads[0] = downloader.download(urls);
-                console.log("downloaded " + totalDownloads[0] + ", last message id was " + totalDownloads[1]);
-            });
-     */
 
     private hydrateUrls(messages: Discord.Collection<string, Discord.Message>, type: FileType): Array<string>
     {

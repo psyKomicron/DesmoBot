@@ -7,7 +7,13 @@ export class Speaker
     private constructor(lang: Lang)
     {
         this.lang = lang;
-        fs.readFileSync(lang);
+        try
+        {
+            fs.readFileSync(lang);
+        } catch (e)
+        {
+            console.error("error on reading speaker file " + e);
+        }
     }
 
     public translate(entry: Reply): string

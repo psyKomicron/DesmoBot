@@ -4,37 +4,34 @@ import Discord = require('discord.js');
 
 export class Downloader
 {
-    public download(uris: Array<string>): number
+    public download(url: string)
     {
-        uris.forEach(url =>
+        // au lieu de foreach => for explicit
+        let path = "./files/" + Downloader.getFileName(url);
+        let file = fs.createWriteStream(path);
+        let req = request.get(url);
+        req.on("response", (response) =>
         {
-            let path = "./files/" + Downloader.getFileName(url);
-            let file = fs.createWriteStream(path);
-            let req = request.get(url);
-            req.on("response", (response) =>
-            {
-                if (response.statusCode !== 200) console.error("status code not 200");
-            });
-
-            req.on("error", err =>
-            {
-                console.error(err);
-                fs.unlinkSync(path);
-            });
-
-            req.pipe(file);
-
-            file.on("finish", () =>
-            {
-                file.close();
-            });
-            file.on("error", err =>
-            {
-                fs.unlinkSync(path);
-                throw err;
-            });
+            if (response.statusCode !== 200) console.error("status code not 200");
         });
-        return uris.length;
+
+        req.on("error", err =>
+        {
+            console.error(err);
+            fs.unlinkSync(path);
+        });
+
+        req.pipe(file);
+
+        file.on("finish", () =>
+        {
+            file.close();
+        });
+        file.on("error", err =>
+        {
+            fs.unlinkSync(path);
+            throw err;
+        });
     }
 
     public static getFileName(url: string): string
