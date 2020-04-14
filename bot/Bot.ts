@@ -1,17 +1,18 @@
 import Discord = require('discord.js');
 import fs = require('fs');
+import readline = require('readline');
 import { TokenReader, EmojiReader } from './Readers';
-import { Speaker, Reply } from '../lang/Speaker';
 import { Downloader } from '../network/Downloader';
+import { stdout } from 'process';
 
 export class Bot 
 {
     // own
     private prefix: string = "/";
+    private readonly parents = ["psyKomicron@6527", "desmoclublyon#3056", "marquez#5719"];
     // discord
     private client: Discord.Client = new Discord.Client();
     // external
-    private speaker: Speaker = Speaker.init("IT");
     private emojiReader: EmojiReader = new EmojiReader();
 
     public constructor() 
@@ -22,7 +23,6 @@ export class Bot
     private init(): void
     {
         this.client.on("ready", () => { console.log("ready"); });
-        //this.client.on("guildMemberAdd", () => { this.greet(); });
         this.client.on("message", (message) => { this.onMessage(message); });
         this.client.login(TokenReader.getToken());
     }
@@ -31,9 +31,9 @@ export class Bot
     {
         let content = message.content;
         let channel = message.channel;
-        if (!content.startsWith(this.prefix)) return;
+        if (!content.startsWith(this.prefix) || !this.parents.includes(this.parseAuthor(message.author))) return;
+        console.log("\ncommand requested by : " + this.parseAuthor(message.author) + "\n");
         let command = content.split(/ /g);
-        console.log(command.length);
         switch (command[1])
         {
             case "download":
@@ -41,11 +41,17 @@ export class Bot
                 let limit = pcmd[0];    
                 let type = pcmd[1];
                 message.react(this.emojiReader.getEmoji("thinking"));
-                console.log("downloading " + limit + " " + type + " files");
+                console.log("Initiating download :");
+                console.log("\tdownloading " + limit);
+                console.log("\tfile type : " + type);
+                if (limit > 250)
+                {
+                    console.log("\n\t/!\\ WARNING : downloading over 250 files can fail /!\\ \n");
+                    message.react(this.emojiReader.getEmoji("warning"));
+                }
                 this.initiateDownload(limit, type, channel)
-                    .then(n =>
+                    .then(() =>
                     {
-                        console.log("Downloaded : " + n);
                         message.react(this.emojiReader.getEmoji("green_check"));
                         if (message.deletable) message.delete({ timeout: 3000 });
                     });
@@ -57,7 +63,7 @@ export class Bot
                     channel.send("cannot delete messages");
                 break;
             default:
-                message.reply(this.speaker.translate(Reply.WRONG_COMMAND));
+                message.reply("wrong command");
                 break;
         }
     }
@@ -70,14 +76,15 @@ export class Bot
         let totalDownloads: number = 0;
         if (channel instanceof Discord.TextChannel)
         {
+            console.log("downloading files with a " + limit + " file chunk");
             let messages = await channel.messages.fetch({ limit: limit });
             let filteredMessages = messages.filter(v => v.attachments.size > 0);
-            console.log("found " + filteredMessages.size + " messages with attachements");
+            console.log("found " + filteredMessages.size + " messages with attachements...");
             let urls = this.hydrateUrls(filteredMessages, type);
             console.log("now have " + urls.length + " matching files");
+            if (urls.length < numberOfFiles) console.log("not enough urls found, searching deeper\n");
             while (urls.length < numberOfFiles) // fetching all requested urls
             {
-                console.log("not enough urls found, searching deeper");
                 lastMessageID = await messages.last()?.id;
                 if (lastMessageID == undefined)
                 {
@@ -90,18 +97,25 @@ export class Bot
                     filteredMessages = messages.filter(v => v.attachments.size > 0);
                     let newUrls = this.hydrateUrls(filteredMessages, type);
                     newUrls.forEach(v => urls.push(v));
-                    console.log("\tnow have " + urls.length + " matching files");
+
+                    readline.moveCursor(process.stdout, 0, -1);
+                    readline.clearLine(process.stdout, 0);
+                    process.stdout.write("\tnow have " + urls.length + " matching files\n");
                 }
             }
             let filepath = "./files/" + channel.name;
-            console.log("\ndownloading in " + filepath);
+            console.log("\nrequest to download " + urls.length + " items in " + filepath);
+            console.log("\t=> user requested " + numberOfFiles);
             fs.mkdir(filepath, { recursive: true }, (err) => { if (err) throw err; });
             filepath += "/";
-            for (let i: number = 0; i < numberOfFiles; i++, totalDownloads++)
+            let copyArray: Array<string> = new Array();
+            downloader.path = filepath;
+            for (let i: number = 0; i < urls.length && i <= numberOfFiles; i++, totalDownloads++)
             {
                 if (urls[i] != undefined)
-                    downloader.download(urls[i], filepath);
+                    copyArray.push(urls[i]);
             }
+            downloader.download(copyArray);
         }
         return totalDownloads;
     }
@@ -199,6 +213,13 @@ export class Bot
     private deleteBulk(channel: Discord.TextChannel): void
     {
         channel.bulkDelete(10);
+    }
+
+    private parseAuthor(author: Discord.User): string
+    {
+        let username = author.username;
+        let discriminator = author.discriminator;
+        return username + "@" + discriminator;
     }
 }
 

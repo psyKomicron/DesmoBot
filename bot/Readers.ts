@@ -19,7 +19,7 @@ export class EmojiReader
 {
     getEmoji(name: string): string
     {
-        let res = fs.readFileSync("./bot/emojis/" + name + ".txt", "UTF-8");
+        let res = fs.readFileSync("./bot/emojis/" + name, "UTF-8");
         return res;
     }
 }
