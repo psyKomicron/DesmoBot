@@ -1,7 +1,7 @@
 import fs = require('fs');
 import readline = require('readline');
 import request = require('request');
-import { Printer as P, Printer }  from '../bot/Printer';
+import { Printer as P }  from '../bot/Printer';
 
 export class Downloader
 {
@@ -93,7 +93,7 @@ export class Downloader
                         current_name = temp_name;
                     ++n;
                 }
-                process.stdout.write(P.normal(old_name + P.info(" >>> ") + current_name + " (extension " + ext + ")") + "\n");
+                process.stdout.write(P.normal(this.printName(old_name) + P.info(" >>> ") + this.printName(current_name) + ext) + "\n");
                 map.set(current_name + ext, true);
                 ++nuples;
             }
