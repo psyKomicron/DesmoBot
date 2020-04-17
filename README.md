@@ -29,5 +29,6 @@ delete messages from a channel (overriding 14 days limitation).
 - added `delete` command
 - reworked `download` command
 ## v. 0.1.1
-- reworked download command :
+- reworked `download command` :
+
   if the messages are newer than 14 days, then the bot will use the bulkDelete method. If they are older than 14 days, it will manually   delete the messages at a cost of a lower delete speed
