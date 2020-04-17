@@ -53,30 +53,6 @@ export class Bot
             });
     }
 
-    private deleteBulk(channel: Discord.TextChannel): void
-    {
-        channel.bulkDelete(10);
-    }
-
-    // #region parsers
-
-    private parseMessage(message: Discord.Message): Array<string>
-    {
-        let params = new Array<string>();
-        let strings = message.content.split(" ");
-        let display = "";
-        if (!(strings.length > 0))
-        {
-            for (let i = 2; i < strings.length; i++)
-            {
-                params.push(strings[i]);
-                display += strings[i];
-            }
-        }
-        console.log(display);
-        return params;
-    }
-
     /**
      * Translate a Discord.User object into a string.
      * concatenate the username & discrimanator with a #
@@ -89,8 +65,6 @@ export class Bot
         let discriminator = author.discriminator;
         return username + "#" + discriminator;
     }
-
-    // #endregion
 }
 
 export enum FileType
