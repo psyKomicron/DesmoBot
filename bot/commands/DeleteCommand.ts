@@ -56,9 +56,10 @@ export class DeleteCommand extends Command
     {
         if (this.delete_values[1] != undefined)
         {
-            console.log("deleting messages :")
-            console.log(
-                `[+] number of messages : ${this.delete_values[0]} \n[+] channel id         : ${this.delete_values[1].name}\n[+] method             : bulk delete`);
+            console.log(Printer.title("deleting messages"));
+            console.log(Printer.args(
+                ["number of messages", "channel name", "method"],
+                [`${this.delete_values[0]}`, `${this.delete_values[1].name}`, "bulk delete"]));
             let channel = this.delete_values[1];
             channel.bulkDelete(this.delete_values[0])
                 .then(response =>
@@ -66,20 +67,22 @@ export class DeleteCommand extends Command
                     console.log(`delete executed`);
                     response.forEach(message =>
                     {
-                        let text = `deleted message : ${Printer.info(this.crop(message))}`;
+                        let text = `deleted messages : ${Printer.info(this.crop(message))}`;
                         readline.moveCursor(process.stdout, -text.length, 0);
                         readline.clearLine(process.stdout, 0);
                         process.stdout.write(text);
                     });
+                    process.stdout.write("\n");
                 })
                 .catch(error =>
                 {
                     readline.moveCursor(process.stdout, 0, -1);
                     readline.clearLine(process.stdout, 0);
-                    console.log("[+] method             : fetch delete");
-                    console.log(Printer.error("error while deleting messages : " + error));
+                    console.log(Printer.args(["method"], ["fetch delete"]));
+                    console.log("error while deleting messages : " + Printer.warn(error));
+                    console.log("switching delete method to manual...");
                     this.overrideDelete(channel)
-                        .then();
+                        .catch(console.error);
                 });
         }
         else

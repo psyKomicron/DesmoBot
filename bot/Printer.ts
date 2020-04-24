@@ -1,7 +1,58 @@
 export class Printer
 {
+
     /**
-     * Returns console printable in default color
+     * Returns a string with dashes around
+     * @param content
+     */
+    public static title(content: string | number)
+    {
+        let tac: string = "";
+        let max = 15 - (content.toString().length / 2);
+        for (let i = 0; i < max; i++) tac += "-";
+        return `${tac}  ${content}  ${tac}`;
+    }
+
+    /**
+     * Returns a formatted string to display command arguments
+     * @param contents
+     * @param values
+     */
+    public static args(contents: string[], values: string[]): string
+    {
+        if (contents.length == values.length)
+        {
+            let maxLength = -1;
+            for (let i = 0; i < contents.length; i++)
+            {
+                if (contents[i].length > maxLength) maxLength = contents[i].length;
+            }
+            maxLength += 4;
+            let lines = "";
+            for (let i = 0; i < contents.length; i++)
+            {
+                let arg = "[+] " + contents[i];
+                while (arg.length < maxLength)
+                {
+                    arg += " ";
+                }
+                if (i != contents.length - 1)
+                    arg += ` : ${values[i]} \n`;
+                else
+                    arg += ` : ${values[i]}`;
+                lines += arg;
+            }
+            return lines;
+        }
+        else
+        {
+            console.log(Printer.error("contents & values not the same size !"));
+            return "";
+        }
+    }
+
+    /**
+     * Returns string in default color
      * @param content
      */
     public static normal(content: string | number): string
@@ -10,7 +61,7 @@ export class Printer
     }
 
     /**
-     * Return console printable in info color
+     * Return string in info color
      * @param content
      */
     public static info(content: string | number): string
@@ -19,7 +70,7 @@ export class Printer
     }
 
     /**
-     * Return console printable in warning color
+     * Return string in warning color
      * @param content
      */
     public static warn(content: string | number): string
@@ -28,7 +79,7 @@ export class Printer
     }
 
     /**
-     * Returns console printable in error color.
+     * Returns string in error color.
      * @param content
      */
     public static error(content: string): string
@@ -37,7 +88,7 @@ export class Printer
     }
 
     /**
-     * Returns a red console printable string
+     * Returns a red string string
      * @param content
      */
     private static pRed(content: string): string
@@ -46,7 +97,7 @@ export class Printer
     }
 
     /**
-     * Returns a green console printable string
+     * Returns a green string string
      * @param content
      */
     private static pGreen(content: string): string
@@ -55,7 +106,7 @@ export class Printer
     }
 
     /**
-     * Returns a blue console printable string
+     * Returns a blue string string
      * @param content
      */
     private static pBlue(content: string): string
@@ -64,7 +115,7 @@ export class Printer
     }
 
     /**
-     * Returns a yellow console printable string
+     * Returns a yellow string string
      * @param content
      */
     private static pYell(content: string): string
@@ -73,7 +124,7 @@ export class Printer
     }
 
     /**
-     * Returns a purple console printable string
+     * Returns a purple string string
      * @param content
      */
     private static pPurp(content: string): string
@@ -82,7 +133,7 @@ export class Printer
     }
 
     /**
-     * Returns a cyan console printable string
+     * Returns a cyan string
      * @param content
      */
     private static pCyan(content: string): string
@@ -91,7 +142,7 @@ export class Printer
     }
 
     /**
-     * Returns a white console printable string
+     * Returns a white string
      * @param content
      */
     private static pWhite(content: string): string
@@ -100,7 +151,7 @@ export class Printer
     }
 
     /**
-     * Returns a black console printable string
+     * Returns a black string
      * @param content
      */
     private static pBlack(content: string): string
@@ -109,7 +160,7 @@ export class Printer
     }
 
     /**
-     * Returns a console printable string with the specified
+     * Returns a string with the specified
      * color.
      * Used by the other methods.
      * @param content string to color

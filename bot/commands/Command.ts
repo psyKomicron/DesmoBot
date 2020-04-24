@@ -17,13 +17,11 @@ export abstract class Command
     {
         let params = new Array<string>();
         let strings = message.content.split(" ");
-        let display = "";
         if (strings.length > 0)
         {
             for (let i = 2; i < strings.length; i++)
             {
                 params.push(strings[i]);
-                display += strings[i];
             }
         }
         return params;

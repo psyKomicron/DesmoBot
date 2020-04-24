@@ -17,16 +17,22 @@ export class HelpCommand extends Command
             .setTitle("Help")
             .setColor(0xff0000)
             .setDescription("Help page for Julie");
-        embed.addField("Explanations", "For commands examples, **DO NOT INCLUDE \"[]\"** when typing the commands");
+        embed.addField("Explanations", "For commands examples, **DO NOT INCLUDE \"[]\"** when typing the commands\n" +
+            "Please provide command arguments in the order given by the command help");
         embed.addField("Download - /download", this.downloadHelp);
         embed.addField("Delete - /delete", this.deleteHelp);
+        embed.addField("Vote - /vote", this.voteHelp);
         this.message.channel.send(embed);
         return "executed";
     }
 
     private get voteHelp(): string
     {
-
+        return `\`/ vote [max number of votes] [vote reason] [channel id]
+All fields a optional, default values are :
+ - max number of votes : 1
+ - vote reason : Yes/No
+ - channel id : where the message has been sent`;
     }
 
     private get downloadHelp(): string

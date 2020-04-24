@@ -16,7 +16,7 @@ export class DownloadCommand extends Command
     public constructor(message: Discord.Message)
     {
         super("download", []);
-        this.download_values = this.getDownloadParams(message);
+        this.download_values = this.getParams(message);
         this.message = message;
         // instantiate fields
         super.Values = [`${this.download_values[0]}`, `${this.download_values[1]}`, `${this.download_values[2]}`];
@@ -31,11 +31,11 @@ export class DownloadCommand extends Command
         if (channel instanceof Discord.TextChannel)
             name = channel.name;
         this.message.react(this.emojiReader.getEmoji("thinking"));
-        console.log("> initiating download :");
-        console.log(
-            `[+] downloading : ${Printer.info(limit)} 
-[+] file type   : ${Printer.info(type)} 
-[+] channel     : ${Printer.info(name)}`);
+        console.log(Printer.title("initiating download"));
+        console.log(Printer.args(
+            ["downloading", "file type", "channel"],
+            [`${limit}`, `${type}`, `${name}`]
+        ));
         if (limit > 250)
         {
             console.log(Printer.warn("\n\t/!\\ WARNING : downloading over 250 files can fail /!\\ \n"));
@@ -50,12 +50,67 @@ export class DownloadCommand extends Command
         return "executed";
     }
 
+    private async initiateDownload(numberOfFiles: number, channel: Discord.Channel): Promise<number>
+    {
+        let downloader = new Downloader();
+        let lastMessageID: Discord.Snowflake = null;
+        let limit = numberOfFiles > 50 ? 50 : numberOfFiles;
+        let totalDownloads: number = 0;
+        if (channel instanceof Discord.TextChannel)
+        {
+            console.log("downloading files with a " + Printer.info("" + limit) + " chunk");
+            let messages = await channel.messages.fetch({ limit: limit });
+            let filteredMessages = this.filterMessages(messages);
+            console.log(Printer.normal("found " + Printer.info(filteredMessages.size) + " messages with attachements..."));
+            let urls = this.hydrateUrls(filteredMessages);
+            console.log("have " + Printer.info(urls.length) + " matching files");
+
+            if (urls.length < numberOfFiles)
+                console.log(Printer.normal("not enough urls found, searching deeper"));
+
+            // fetching all requested urls
+            while (urls.length < numberOfFiles) 
+            {
+                lastMessageID = await messages.last()?.id;
+                if (lastMessageID == undefined)
+                {
+                    console.log(Printer.warn("not more messages to parse, breaking"));
+                    break;
+                }
+                else
+                {
+                    messages = await channel.messages.fetch({ limit: limit, before: lastMessageID });
+                    filteredMessages = messages.filter(v => v.attachments.size > 0);
+                    let newUrls = this.hydrateUrls(filteredMessages);
+                    newUrls.forEach(v => urls.push(v));
+
+                    readline.moveCursor(process.stdout, 0, -1);
+                    readline.clearLine(process.stdout, 0);
+                    process.stdout.write("\tnow have " + Printer.info(urls.length) + " matching files\n");
+                }
+            }
+            let filepath = "./files/" + channel.name;
+            fs.mkdir(filepath, { recursive: true }, (err) => { if (err) throw err; });
+            filepath += "/";
+            let copyArray: Array<string> = new Array();
+            downloader.path = filepath;
+            for (let i: number = 0; i < urls.length && i < numberOfFiles; i++, totalDownloads++)
+            {
+                if (urls[i] != undefined)
+                    copyArray.push(urls[i]);
+            }
+            console.log(`sending ${Printer.info(copyArray.length)} items in ${filepath} (user requested ${Printer.info(numberOfFiles)})`);
+            downloader.download(copyArray);
+        }
+        return totalDownloads;
+    }
+
     /**
      * Parse a string array to retrieve necessary infos for 
      * this.initiateDownload method.
      * @param command content to parse (usually a message content)
      */
-    private getDownloadParams(message: Discord.Message): [number, FileType, Discord.Channel]
+    private getParams(message: Discord.Message): [number, FileType, Discord.Channel]
     {
         let limit = 50;
         let type = FileType.IMG;
@@ -91,64 +146,6 @@ export class DownloadCommand extends Command
                 id = guild.channels.resolve(args[0]);
         }
         return [limit, type, id];
-    }
-
-    private async initiateDownload(numberOfFiles: number, channel: Discord.Channel): Promise<number>
-    {
-        let downloader = new Downloader();
-        let lastMessageID: Discord.Snowflake = null;
-        let limit = numberOfFiles > 50 ? 50 : numberOfFiles;
-        let totalDownloads: number = 0;
-        if (channel instanceof Discord.TextChannel)
-        {
-            console.log("downloading files with a " + Printer.info("" + limit) + " chunk");
-            let messages = await channel.messages.fetch({ limit: limit });
-            let filteredMessages = this.filterMessages(messages);
-            console.log(Printer.normal("found " + Printer.info(filteredMessages.size) + " messages with attachements..."));
-            let urls = this.hydrateUrls(filteredMessages);
-            console.log("now have " + Printer.info(urls.length) + " matching files");
-
-            if (urls.length < numberOfFiles)
-                console.log(Printer.normal("not enough urls found, searching deeper\n"));
-
-            // fetching all requested urls
-            while (urls.length < numberOfFiles) 
-            {
-                lastMessageID = await messages.last()?.id;
-                if (lastMessageID == undefined)
-                {
-                    console.log(Printer.warn("not more messages to parse, breaking"));
-                    break;
-                }
-                else
-                {
-                    messages = await channel.messages.fetch({ limit: limit, before: lastMessageID });
-                    filteredMessages = messages.filter(v => v.attachments.size > 0);
-                    let newUrls = this.hydrateUrls(filteredMessages);
-                    newUrls.forEach(v => urls.push(v));
-
-                    readline.moveCursor(process.stdout, 0, -1);
-                    readline.clearLine(process.stdout, 0);
-                    process.stdout.write("\tnow have " + Printer.info(urls.length) + " matching files\n");
-                }
-            }
-            let filepath = "./files/" + channel.name;
-
-            console.log("\nsending " + Printer.info(urls.length) + " items in " + filepath);
-            console.log("\t=> user requested " + Printer.info(numberOfFiles));
-
-            fs.mkdir(filepath, { recursive: true }, (err) => { if (err) throw err; });
-            filepath += "/";
-            let copyArray: Array<string> = new Array();
-            downloader.path = filepath;
-            for (let i: number = 0; i < urls.length && i <= numberOfFiles; i++, totalDownloads++)
-            {
-                if (urls[i] != undefined)
-                    copyArray.push(urls[i]);
-            }
-            downloader.download(copyArray);
-        }
-        return totalDownloads;
     }
 
     private hydrateUrls(messages: Discord.Collection<string, Discord.Message>, type: FileType = FileType.IMG): Array<string>

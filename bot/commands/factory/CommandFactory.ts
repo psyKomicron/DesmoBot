@@ -4,13 +4,15 @@ import { DownloadCommand } from '../DownloadCommand';
 import { DeleteCommand } from '../DeleteCommand';
 import { DefaultCommand } from '../DefaultCommand';
 import { HelpCommand } from './HelpCommand';
+import { VoteCommand } from '../VoteCommand';
+import { Bot } from '../../Bot';
 
 export class CommandFactory
 {
     public static create(type: string, message: Discord.Message): Command
     {
         let command: Command = undefined;
-        console.log(type);
+        //console.log(type);
         switch (type)
         {
             case "download":
@@ -21,6 +23,9 @@ export class CommandFactory
                 break;
             case "help":
                 command = new HelpCommand(message);
+                break;
+            case "vote":
+                command = new VoteCommand(message);
                 break;
             default:
                 command = new DefaultCommand(message);

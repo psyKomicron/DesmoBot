@@ -9,11 +9,9 @@ export class Downloader
 
     public async download(urls: Array<string>): Promise<string>
     {
-        console.log(P.normal(`received  ${ urls.length } urls`));
         let names = new Array<string>();
         for (let i = 0; i < urls.length; i++)
         {
-            //names.push(`${i}_${Downloader.getFileName(urls[i])}`);
             names.push(Downloader.getFileName(urls[i]));
         }
         names = this.renameFiles(names);

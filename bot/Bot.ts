@@ -1,29 +1,36 @@
 import Discord = require('discord.js');
-import { TokenReader, EmojiReader } from './Readers';
+import readline = require('readline');
+import { TokenReader } from './Readers';
 import { Printer } from './Printer';
-import { DownloadCommand } from './commands/DownloadCommand';
-import { DeleteCommand } from './commands/DeleteCommand';
 import { CommandFactory } from './commands/factory/CommandFactory';
+import { clearInterval } from 'timers';
 
 export class Bot 
 {
     // own
-    private workingChannel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel;
     private prefix: string = "/";
     private readonly parents = ["psyKomicron#6527", "desmoclublyon#3056", "marquez#5719"];
     // discord
-    private client: Discord.Client = new Discord.Client();
-    // external
-    private emojiReader: EmojiReader = new EmojiReader();
+    private readonly client: Discord.Client = new Discord.Client();
 
-    public constructor() 
+    public constructor(id: NodeJS.Timeout) 
     {
-        this.init();
+        this.init(id);
     }
 
-    private init(): void
+    public get Client(): Discord.Client
     {
-        this.client.on("ready", () => { console.log(Printer.info("--------------------------------------------") + "\n\t\tREADY"); });
+        return this.client;
+    }
+
+    private init(id: NodeJS.Timeout): void
+    {
+        this.client.on("ready", () =>
+        {
+            clearInterval(id);
+            readline.moveCursor(process.stdout, -4, 0);
+            process.stdout.write(`READY\n${Printer.error("-------------------------------------")}\n`);
+        });
         this.client.on("message", (message) => { this.onMessage(message); });
         this.client.login(TokenReader.getToken());
     }
@@ -31,9 +38,8 @@ export class Bot
     private onMessage(message: Discord.Message): void 
     {
         let content = message.content;
-        let channel = message.channel;
         if (!content.startsWith(this.prefix) || !this.parents.includes(this.parseAuthor(message.author))) return;
-        console.log("\ncommand requested by : " + Printer.info(this.parseAuthor(message.author)) + "\n");
+        console.log("\ncommand requested by : " + Printer.info(this.parseAuthor(message.author)));
         let args = content.split(/ /g);
         let command = CommandFactory.create(args[1], message);
         command.execute()
@@ -45,10 +51,6 @@ export class Bot
                         `error occured {
 [-] command name  : ${command.Name}
 [-] command values : ${command.Values.toString}`);
-                }
-                if (response == "executed")
-                {
-                    console.log(`command ${command.Name} executed`);
                 }
             });
     }
