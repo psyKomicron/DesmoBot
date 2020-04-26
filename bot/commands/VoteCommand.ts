@@ -1,9 +1,8 @@
 import Discord = require('discord.js');
 import readline = require('readline');
 import { Command } from './Command';
-import { Printer } from '../Printer';
+import { Printer } from '../ui/Printer';
 import { EmojiReader } from '../Readers';
-import { Bot } from '../Bot';
 
 export class VoteCommand extends Command
 {
@@ -32,18 +31,11 @@ export class VoteCommand extends Command
     {
         console.log(Printer.title("starting vote"));
         console.log(Printer.args(["max votes", "vote reason", "vote channel"], [`${this.maxVotes}`, this.reason, this.voteChannel.id]))
-        /*
-        console.log(
-`[+] max votes    : ${Printer.info(this.maxVotes)}
-[+] vote reason  : ${Printer.info(this.reason)}
-[+] vote channel : ${Printer.info(this.voteChannel.id)}`);
-*/
         if (this.voteChannel instanceof Discord.TextChannel)
         {
             this.voteChannel.send(this.reason)
                 .then(message =>
                 {
-                    message.react(new EmojiReader().getEmoji("green_check"));
                     this.buildCollector(message);
                 });
         }
@@ -54,9 +46,16 @@ export class VoteCommand extends Command
     {
         let emojiReader = new EmojiReader();
         let yes = emojiReader.getEmoji("green_check");
+
         this.collector = message.createReactionCollector((reaction, user) =>
         {
-            return !user.bot;
+            return reaction.emoji.name == yes || !user.bot;
+        });
+
+        this.collector.addListener("remove", (reaction, user) =>
+        {
+            console.log(`! remove ${reaction.emoji.name}`);
+            console.log(`- ${user.username} removed ${reaction.emoji.name}`);
         });
 
         this.collector.on("collect", (reaction, user) =>
@@ -65,10 +64,10 @@ export class VoteCommand extends Command
             console.log(`- ${user.username} reacted with ${reaction.emoji.name}`);
         });
 
-        this.collector.on("remove", (reaction, user) =>
+        this.collector.on("dispose", (reaction, user) =>
         {
-            console.log(`! lost ${reaction.emoji.name}`);
-            console.log(`- ${user.username} removed ${reaction.emoji.name}`);
+            console.log(`! dispose ${reaction.emoji.name}`);
+            console.log(`- ${user.username} reacted with ${reaction.emoji.name}`);
         });
 
         this.collector.on("end", (collected) =>
