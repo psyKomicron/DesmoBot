@@ -3,9 +3,10 @@ import readline = require('readline');
 import fs = require('fs');
 import { Command } from "./Command";
 import { FileType } from "../Bot";
-import { Printer } from '../Printer';
+import { Printer } from '../ui/Printer';
 import { EmojiReader } from '../Readers';
 import { Downloader } from '../../network/Downloader';
+import { ProgressBar } from '../ui/ProgressBar';
 
 export class DownloadCommand extends Command
 {
@@ -66,27 +67,28 @@ export class DownloadCommand extends Command
             console.log("have " + Printer.info(urls.length) + " matching files");
 
             if (urls.length < numberOfFiles)
-                console.log(Printer.normal("not enough urls found, searching deeper"));
-
-            // fetching all requested urls
-            while (urls.length < numberOfFiles) 
             {
-                lastMessageID = await messages.last()?.id;
-                if (lastMessageID == undefined)
+                console.log(Printer.normal("not enough urls found, searching deeper"));
+                let bar = new ProgressBar(numberOfFiles, "fetching urls");
+                bar.start();
+                // fetching all requested urls
+                while (urls.length < numberOfFiles) 
                 {
-                    console.log(Printer.warn("not more messages to parse, breaking"));
-                    break;
-                }
-                else
-                {
-                    messages = await channel.messages.fetch({ limit: limit, before: lastMessageID });
-                    filteredMessages = messages.filter(v => v.attachments.size > 0);
-                    let newUrls = this.hydrateUrls(filteredMessages);
-                    newUrls.forEach(v => urls.push(v));
+                    lastMessageID = await messages.last()?.id;
+                    if (lastMessageID == undefined)
+                    {
+                        console.log(Printer.warn("not more messages to parse, breaking"));
+                        break;
+                    }
+                    else
+                    {
+                        messages = await channel.messages.fetch({ limit: limit, before: lastMessageID });
+                        filteredMessages = messages.filter(v => v.attachments.size > 0);
+                        let newUrls = this.hydrateUrls(filteredMessages);
+                        newUrls.forEach(v => urls.push(v));
 
-                    readline.moveCursor(process.stdout, 0, -1);
-                    readline.clearLine(process.stdout, 0);
-                    process.stdout.write("\tnow have " + Printer.info(urls.length) + " matching files\n");
+                        bar.update(urls.length);
+                    }
                 }
             }
             let filepath = "./files/" + channel.name;
