@@ -1,7 +1,8 @@
 import fs = require('fs');
 import readline = require('readline');
 import request = require('request');
-import { Printer as P }  from '../bot/Printer';
+import { Printer as P }  from '../bot/ui/Printer';
+import { ProgressBar } from '../bot/ui/ProgressBar';
 
 export class Downloader
 {
@@ -15,16 +16,13 @@ export class Downloader
             names.push(Downloader.getFileName(urls[i]));
         }
         names = this.renameFiles(names);
+        let bar = new ProgressBar(urls.length, "downloading");
+        bar.start();
         for (let i = 0; i < urls.length; i++)
         {
-            if (i > 0)
-            {
-                readline.moveCursor(process.stdout, 0, -1);
-                readline.clearLine(process.stdout, 0);
-            }
             let path = this.path + names[i];
             let file = await fs.createWriteStream(path);
-            process.stdout.write(`${this.path} <<< ${this.printName(names[i])}\n`);
+            bar.update(i + 1);
             let req = await request.get(urls[i]);
             req.on("response", (response) =>
             {
