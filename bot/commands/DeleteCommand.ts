@@ -1,7 +1,9 @@
 import Discord = require('discord.js');
 import readline = require('readline');
 import { Command } from "./Command";
-import { Printer } from '../Printer';
+import { Printer } from '../ui/Printer';
+import { ProgressBar } from '../ui/ProgressBar';
+import { clearTimeout } from 'timers';
 
 export class DeleteCommand extends Command
 {
@@ -20,6 +22,7 @@ export class DeleteCommand extends Command
         let messages: Discord.Collection<string, Discord.Message> = await channel.messages.fetch();
         let messagesToDelete: Array<Discord.Message> = new Array();
         messages.forEach(message => { if (message != undefined) messagesToDelete.push(message) });
+        let bar = new ProgressBar(this.delete_values[0], "getting messages");
         while (messagesToDelete.length < this.delete_values[0]) 
         {
             let lastMessageID = await messages.last()?.id;
@@ -37,16 +40,18 @@ export class DeleteCommand extends Command
                 process.stdout.write("\tnow have " + Printer.info(messagesToDelete.length) + " messages\n");
             }
         }
+        bar.start();
         for (let i = 0; i < messages.size && i < this.delete_values[0]; i++)
         {
-            if (messagesToDelete[i].deletable) await messagesToDelete[i].delete({ timeout: 1 });
-            let text = `deleted messages ${Printer.info(i + 1)} messages`;
-            if (i > 0)
+            let timeout = setTimeout(() =>
             {
-                readline.moveCursor(process.stdout, -text.length, 0);
-                readline.clearLine(process.stdout, 0);
-            }
-            process.stdout.write(text);
+                readline.moveCursor(process.stdout, 64, -2);
+                console.log(Printer.warn("deleting messages is taking too much time"));
+                readline.moveCursor(process.stdout, 0, 1);
+            }, 100);
+            if (messagesToDelete[i].deletable) await messagesToDelete[i].delete({ timeout: 1 });
+            bar.update(i + 1);
+            clearTimeout(timeout);
         }
         console.log("");
         return "executed";
@@ -64,22 +69,21 @@ export class DeleteCommand extends Command
             channel.bulkDelete(this.delete_values[0])
                 .then(response =>
                 {
-                    console.log(`delete executed`);
-                    response.forEach(message =>
+                    let bar = new ProgressBar(response.size, "deleting messages");
+                    bar.start();
+                    let i = 1;
+                    response.forEach(() =>
                     {
-                        let text = `deleted messages : ${Printer.info(this.crop(message))}`;
-                        readline.moveCursor(process.stdout, -text.length, 0);
-                        readline.clearLine(process.stdout, 0);
-                        process.stdout.write(text);
+                        bar.update(i);
+                        i++;
                     });
-                    process.stdout.write("\n");
                 })
                 .catch(error =>
                 {
                     readline.moveCursor(process.stdout, 0, -1);
                     readline.clearLine(process.stdout, 0);
-                    console.log(Printer.args(["method"], ["fetch delete"]));
-                    console.log("error while deleting messages : " + Printer.warn(error));
+                    console.log(Printer.args(["method            "], ["fetch delete"]));
+                    console.log("while deleting messages : " + Printer.warn(error));
                     console.log("switching delete method to manual...");
                     this.overrideDelete(channel)
                         .catch(console.error);
