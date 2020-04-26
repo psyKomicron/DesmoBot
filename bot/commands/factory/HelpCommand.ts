@@ -17,7 +17,7 @@ export class HelpCommand extends Command
             .setTitle("Help")
             .setColor(0xff0000)
             .setDescription("Help page for Julie");
-        embed.addField("Explanations", "For commands examples, **DO NOT INCLUDE \"[]\"** when typing the commands\n" +
+        embed.addField("Intro", "For commands examples, **DO NOT INCLUDE \"[]\"** when typing the commands\n" +
             "Please provide command arguments in the order given by the command help");
         embed.addField("Download - /download", this.downloadHelp);
         embed.addField("Delete - /delete", this.deleteHelp);
