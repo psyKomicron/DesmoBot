@@ -1,5 +1,5 @@
 import Discord = require('discord.js');
-import { Command } from "../Command";
+import { Command } from "./Command";
 
 export class HelpCommand extends Command
 {
@@ -7,7 +7,7 @@ export class HelpCommand extends Command
 
     public constructor(message: Discord.Message)
     {
-        super("help", ["help command"]);
+        super("help");
         this.message = message;
     }
 
