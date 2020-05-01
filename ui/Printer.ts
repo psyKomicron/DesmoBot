@@ -1,5 +1,31 @@
+import readline = require('readline');
+
 export class Printer
 {
+    public static startUp(): void
+    {
+        this.printEscCode(EscapeCodes.CLEAR_SCREEN);
+        this.printEscCode(EscapeCodes.HIDE_CURSOR);
+        readline.cursorTo(process.stdout, 0, 0);
+        process.stdout.write(this.appTitle());
+    }
+
+    private static appTitle(): string
+    {
+        let str = Printer.error("-------------------------------------\n");
+        str += `${Printer.error(">>>>>")} Desmo Bot with TypeScript ${Printer.error("<<<<<")}\n`; // 59
+        str += `${Printer.error(">>>>>")}                           ${Printer.error("<<<<<")}
+${Printer.error("-------------------------------------")}`;
+        return str;
+    }
+
+    public static print(content: string, position: [number, number])
+    {
+        Printer.saveCursor();
+        readline.moveCursor(process.stdout, position[0], position[1]);
+        console.log(content);
+        Printer.restoreCursor();
+    }
 
     /**
      * Returns a string with dashes around
@@ -51,19 +77,6 @@ export class Printer
         }
     }
 
-    /**
-     * Returns string in default color
-     * @param content
-     */
-    public static normal(content: string | number): string
-    {
-        return `${content}`;
-    }
-
-    /**
-     * Return string in info color
-     * @param content
-     */
     public static info(content: string | number): string
     {
         return this.pGreen(`${content}`);
@@ -87,89 +100,75 @@ export class Printer
         return this.pRed(content);
     }
 
-    /**
-     * Returns a red string string
-     * @param content
-     */
+    public static hideCursor(): void
+    {
+        this.printEscCode(EscapeCodes.HIDE_CURSOR);
+    }
+
+    public static saveCursor(): void
+    {
+        this.printEscCode(EscapeCodes.SAVE_CURSOR);
+    }
+
+    public static restoreCursor(): void
+    {
+        this.printEscCode(EscapeCodes.RESTORE_CURSOR);
+    }
+
+    public static normal(content: string | number): string
+    {
+        return `${content}`;
+    }
+
     private static pRed(content: string): string
     {
         return this.printColor(content, Colors.RED);
     }
-
-    /**
-     * Returns a green string string
-     * @param content
-     */
     private static pGreen(content: string): string
     {
         return this.printColor(content, Colors.GREEN);
     }
-
-    /**
-     * Returns a blue string string
-     * @param content
-     */
     private static pBlue(content: string): string
     {
         return this.printColor(content, Colors.BLUE);
     }
-
-    /**
-     * Returns a yellow string string
-     * @param content
-     */
     private static pYell(content: string): string
     {
         return this.printColor(content, Colors.YELLOW);
     }
-
-    /**
-     * Returns a purple string string
-     * @param content
-     */
     private static pPurp(content: string): string
     {
         return this.printColor(content, Colors.PURPLE);
     }
-
-    /**
-     * Returns a cyan string
-     * @param content
-     */
     private static pCyan(content: string): string
     {
         return this.printColor(content, Colors.CYAN);
     }
-
-    /**
-     * Returns a white string
-     * @param content
-     */
     private static pWhite(content: string): string
     {
         return this.printColor(content, Colors.WHITE);
     }
-
-    /**
-     * Returns a black string
-     * @param content
-     */
     private static pBlack(content: string): string
     {
         return this.printColor(content, Colors.BLACK);
     }
-
-    /**
-     * Returns a string with the specified
-     * color.
-     * Used by the other methods.
-     * @param content string to color
-     * @param color
-     */
     private static printColor(content: string, color: Colors): string
     {
         return color + content + Colors.RESET;
     }
+    private static printEscCode(code: EscapeCodes)
+    {
+        process.stdout.write(code);
+    }
+}
+
+enum EscapeCodes
+{
+    SAVE_CURSOR = "\u001B[s",
+    RESTORE_CURSOR = "\u001B[u",
+    HIDE_CURSOR = "\u001B[?25l",
+    CLEAR_SCREEN = "\u001B[1J",
+    CLEAR_SCREEN_R = "\u001B[3J",
 }
 
 enum Colors
