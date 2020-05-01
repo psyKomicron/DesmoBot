@@ -2,7 +2,16 @@
 ## About (long)
 DesmoBot Discord bot, written in TypeScript. Obviously it is using the discord.js API.
 
-For now the bot can download attachements embeded in a message, delete messages in a channel. With both commands you can specify on wich channel the bot will be working, and the number of messages to download/delete. In addition to that the `download` command can download a specific type of file (for now only a few types are available).
+## Functionalities
+### Vote
+The bot creates a poll system using a `Discord.MessageEmbed` and `Discord.ReactionCollector`. Does not support yet a lot of reactions.
+`/vote -n [timeout for the poll in seconds] -c [channel snowflake/id] -r [title of the poll/vote]`
+### Delete
+The bot deletes a given number of messages in a channel using the channel's `Discord.Snowflake` and can be set to delete a specified user's messages.
+`/delete -n [number of messages] -c [channel snowflake/id] -u [discord username (ex: user#1234)]`
+### Download
+The bot download a given number of files (type of the files can be specified) in a channel using the channel's `Discord.Snowflake`. When all files are downloaded, a http server is started on localhost to download files remotely. The http server is automatically shutdown after a specified number of seconds.
+`/download -n [number of files] -c [channel snowflake/id] -t [type of the files] -s [timeout for the http server in seconds]
 
 ## About (short)
 discord bot using typescript.
@@ -10,6 +19,8 @@ discord bot using typescript.
 downloads files.
 
 delete messages from a channel (overriding 14 days limitation).
+
+create a poll system.
 
 ## Dependencies
 *all dependencies versions can be newer*
@@ -30,5 +41,4 @@ delete messages from a channel (overriding 14 days limitation).
 - reworked `download` command
 ## v. 0.1.1
 - reworked `delete command` :
-
-  if the messages are newer than 14 days, then the bot will use the bulkDelete method. If they are older than 14 days, it will manually   delete the messages at a cost of a lower delete speed
+  - if the messages are newer than 14 days, then the bot will use the bulkDelete method. If they are older than 14 days, it will manually   delete the messages at a cost of a lower delete speed
