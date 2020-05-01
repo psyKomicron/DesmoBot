@@ -5,13 +5,13 @@ DesmoBot Discord bot, written in TypeScript. Obviously it is using the discord.j
 ## Functionalities
 ### Vote
 The bot creates a poll system using a `Discord.MessageEmbed` and `Discord.ReactionCollector`. Does not support yet a lot of reactions.
-`/vote -n [timeout for the poll in seconds] -c [channel snowflake/id] -r [title of the poll/vote]`
+- `/vote -n [timeout for the poll in seconds] -c [channel snowflake/id] -r [title of the poll/vote]`
 ### Delete
 The bot deletes a given number of messages in a channel using the channel's `Discord.Snowflake` and can be set to delete a specified user's messages.
-`/delete -n [number of messages] -c [channel snowflake/id] -u [discord username (ex: user#1234)]`
+- `/delete -n [number of messages] -c [channel snowflake/id] -u [discord username (ex: user#1234)]`
 ### Download
 The bot download a given number of files (type of the files can be specified) in a channel using the channel's `Discord.Snowflake`. When all files are downloaded, a http server is started on localhost to download files remotely. The http server is automatically shutdown after a specified number of seconds.
-`/download -n [number of files] -c [channel snowflake/id] -t [type of the files] -s [timeout for the http server in seconds]
+- `/download -n [number of files] -c [channel snowflake/id] -t [type of the files] -s [timeout for the http server in seconds]`
 
 ## About (short)
 discord bot using typescript.
