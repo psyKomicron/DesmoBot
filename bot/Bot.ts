@@ -38,34 +38,37 @@ export class Bot
     private onMessage(message: Discord.Message): void 
     {
         let content = message.content;
-        if (!content.startsWith(this.prefix) || !this.parents.includes(this.parseAuthor(message.author))) return;
-        console.log("\ncommand requested by : " + Printer.info(this.parseAuthor(message.author)));
-        let args = content.split(/ /g);
-        let command = CommandFactory.create(args[1], message);
-        command.execute()
-            .then(response =>
+        if (content.startsWith(this.prefix) && this.parents.includes(this.parseAuthor(message.author)))
+        {
+            console.log("\ncommand requested by : " + Printer.info(this.parseAuthor(message.author)));
+            let substr = 0;
+            let name = "";
+            while (substr < content.length && content[substr] != "-" && content[substr] != " ")
             {
-                if (response == "error")
+                name += content[substr];
+                substr++;
+            }
+            let command = CommandFactory.create(name.substr(1), message);
+            command.execute()
+                .then(response =>
                 {
-                    console.error(
-                        `error occured {
-[-] command name  : ${command.Name}
-[-] command values : ${command.Values.toString}`);
-                }
-            });
+                    if (response == "error")
+                    {
+                        console.error(
+                            `error occured {\n[-] command name  : ${command.Name}\n[-] command values : ${command.Values.toString}`);
+                    }
+                });
+        }
     }
 
     /**
-     * Translate a Discord.User object into a string.
-     * concatenate the username & discrimanator with a #
+     * Translate a Discord.User object into a string. Concatenate the username & discrimanator with a #
      * in between.
      * @param author Discord.User to translate
      */
     private parseAuthor(author: Discord.User): string
     {
-        let username = author.username;
-        let discriminator = author.discriminator;
-        return username + "#" + discriminator;
+        return author.username + "#" + author.discriminator;
     }
 }
 
