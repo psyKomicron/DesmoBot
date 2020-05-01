@@ -1,33 +1,31 @@
 import Discord = require('discord.js');
-import readline = require('readline');
 import fs = require('fs');
 import { Command } from "./Command";
 import { FileType } from "../Bot";
 import { Printer } from '../ui/Printer';
 import { EmojiReader } from '../Readers';
 import { Downloader } from '../../network/Downloader';
-import { ProgressBar } from '../ui/ProgressBar';
+import { ProgressBar } from '../../ui/web/effects/ProgressBar';
+import { WebServer } from '../../ui/web/WebServer';
 
 export class DownloadCommand extends Command
 {
     private emojiReader: EmojiReader = new EmojiReader();
     private message: Discord.Message;
-    private download_values: [number, FileType, Discord.Channel];
+    private downloadValues: [number, FileType, Discord.Channel, number];
 
     public constructor(message: Discord.Message)
     {
-        super("download", []);
-        this.download_values = this.getParams(message);
+        super("download");
         this.message = message;
-        // instantiate fields
-        super.Values = [`${this.download_values[0]}`, `${this.download_values[1]}`, `${this.download_values[2]}`];
+        this.downloadValues = this.getParams(this.parseMessage(message));
     }
 
     public async execute(): Promise<string> 
     {
-        let limit = this.download_values[0];
-        let type = this.download_values[1];
-        let channel = this.download_values[2];
+        let limit = this.downloadValues[0];
+        let type = this.downloadValues[1];
+        let channel = this.downloadValues[2];
         let name = "";
         if (channel instanceof Discord.TextChannel)
             name = channel.name;
@@ -86,7 +84,6 @@ export class DownloadCommand extends Command
                         filteredMessages = messages.filter(v => v.attachments.size > 0);
                         let newUrls = this.hydrateUrls(filteredMessages);
                         newUrls.forEach(v => urls.push(v));
-
                         bar.update(urls.length);
                     }
                 }
@@ -102,7 +99,11 @@ export class DownloadCommand extends Command
                     copyArray.push(urls[i]);
             }
             console.log(`sending ${Printer.info(copyArray.length)} items in ${filepath} (user requested ${Printer.info(numberOfFiles)})`);
-            downloader.download(copyArray);
+            downloader.download(copyArray)
+                .then(() =>
+                {
+                    new WebServer(this.downloadValues[3]).startService();
+                });
         }
         return totalDownloads;
     }
@@ -112,42 +113,42 @@ export class DownloadCommand extends Command
      * this.initiateDownload method.
      * @param command content to parse (usually a message content)
      */
-    private getParams(message: Discord.Message): [number, FileType, Discord.Channel]
+    private getParams(map: Map<string, string>): [number, FileType, Discord.Channel, number]
     {
         let limit = 50;
         let type = FileType.IMG;
-        let id: Discord.Channel = message.channel;
-        let guild = message.guild;
-        let args: Array<string> = this.parseMessage(message);
-        if (args.length == 3)
+        let channel: Discord.Channel = this.message.channel;
+        let timeout: number;
+        map.forEach((value, key) =>
         {
-            // arg 0 -> number of files
-            if (!Number.isNaN(Number.parseInt(args[0])))
-                limit = Number.parseInt(args[0]);
-            // arg 1 -> type of files
-            type = this.getFileType(args[1]);
-            // arg 2 -> channel id
-            if (guild.channels.resolve(args[2]) != undefined)
-                id = guild.channels.resolve(args[2]);
-        }
-        if (args.length == 2)
-        {
-            // arg 1 -> number of files || type of files
-            if (!Number.isNaN(Number.parseInt(args[0])))
-                limit = Number.parseInt(args[0]);
-            else
-                type = this.getFileType(args[0]);
-            // arg 2 -> channel id
-            if (guild.channels.resolve(args[1]) != undefined)
-                id = guild.channels.resolve(args[1]);
-        }
-        if (args.length == 1)
-        {
-            // arg -> channel id
-            if (guild.channels.resolve(args[0]) != undefined)
-                id = guild.channels.resolve(args[0]);
-        }
-        return [limit, type, id];
+            switch (key)
+            {
+                case "t":
+                    type = this.getFileType(value);
+                    break;
+                case "n":
+                    if (!Number.isNaN(Number.parseInt(value)))
+                    {
+                        limit = Number.parseInt(value);
+                    }
+                    break;
+                case "c":
+                    let resolvedChannel = this.message.guild.channels.resolve(value);
+                    if (resolvedChannel && resolvedChannel instanceof Discord.TextChannel)
+                    {
+                        channel = resolvedChannel;
+                    }
+                    break;
+                case "s":
+                    if (!Number.isNaN(Number.parseInt(value)))
+                    {
+                        timeout = Number.parseInt(value);
+                    }
+                    break;
+                default:
+            }
+        });
+        return [limit, type, channel, timeout];
     }
 
     private hydrateUrls(messages: Discord.Collection<string, Discord.Message>, type: FileType = FileType.IMG): Array<string>
@@ -158,12 +159,8 @@ export class DownloadCommand extends Command
             message.attachments.forEach(attachement =>
             {
                 if (type == FileType.IMG) // image files (png, jpg, gif)
-                {
                     if (this.isImage(attachement.url))
-                    {
                         urls.push(attachement.url);
-                    }
-                }
             });
         });
         return urls;

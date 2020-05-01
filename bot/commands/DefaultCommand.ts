@@ -7,7 +7,7 @@ export class DefaultCommand extends Command
 
     public constructor(message: Discord.Message)
     {
-        super("default", [`${message.content}`, `${message.channel}`]);
+        super("default");
         this.message = message;
     }
     
