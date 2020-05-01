@@ -2,7 +2,7 @@ import fs = require('fs');
 import readline = require('readline');
 import request = require('request');
 import { Printer as P }  from '../bot/ui/Printer';
-import { ProgressBar } from '../bot/ui/ProgressBar';
+import { ProgressBar } from '../ui/web/effects/ProgressBar';
 
 export class Downloader
 {
@@ -52,7 +52,7 @@ export class Downloader
         {
             fs.appendFileSync(this.path + "logs.txt", `${url}\n`);
         });
-        console.log("wrote results into" + P.info(this.path + "/urls.txt"));
+        console.log("wrote results into" + P.info(this.path + "logs.txt"));
         return "completed";
     }
 
