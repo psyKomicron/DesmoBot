@@ -108,7 +108,7 @@ export class VoteCommand extends Command
         let embed = new Discord.MessageEmbed()
             .setTitle(title)
             .setFooter("Vote requested by " + this.message.author.username);
-        if ()
+        //if ()
         return embed;
     }
 }
