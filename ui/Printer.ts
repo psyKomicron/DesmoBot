@@ -63,9 +63,9 @@ ${Printer.error("-------------------------------------")}`;
                     arg += " ";
                 }
                 if (i != contents.length - 1)
-                    arg += ` : ${values[i]} \n`;
+                    arg += ` : ${Printer.printName(values[i])} \n`;
                 else
-                    arg += ` : ${values[i]}`;
+                    arg += ` : ${Printer.printName(values[i])}`;
                 lines += arg;
             }
             return lines;
@@ -115,6 +115,12 @@ ${Printer.error("-------------------------------------")}`;
         this.printEscCode(EscapeCodes.RESTORE_CURSOR);
     }
 
+    public static clear(): void
+    {
+        this.printEscCode(EscapeCodes.CLEAR_SCREEN);
+        readline.cursorTo(process.stdout, 0, 0);
+    }
+
     public static normal(content: string | number): string
     {
         return `${content}`;
@@ -159,6 +165,22 @@ ${Printer.error("-------------------------------------")}`;
     private static printEscCode(code: EscapeCodes)
     {
         process.stdout.write(code);
+    }
+    private static printName(name: string)
+    {
+        if (name.length > 20)
+        {
+            let firstName = "";
+            for (var i = 0; i < 10; i++)
+                firstName += name.charAt(i);
+            firstName += "[...]";
+            let endName = "";
+            for (var j = name.length - 10; j < name.length; j++)
+                endName += name.charAt(j);
+            return firstName + endName;
+        }
+        else
+            return name;
     }
 }
 
