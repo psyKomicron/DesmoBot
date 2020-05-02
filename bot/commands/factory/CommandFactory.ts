@@ -6,6 +6,7 @@ import { DefaultCommand } from '../DefaultCommand';
 import { HelpCommand } from '../HelpCommand';
 import { VoteCommand } from '../VoteCommand';
 import { Bot } from '../../Bot';
+import { EmbedCommand } from '../EmbedCommand';
 
 export class CommandFactory
 {
@@ -25,6 +26,9 @@ export class CommandFactory
                 break;
             case "vote":
                 command = new VoteCommand(message);
+                break;
+            case "embed":
+                command = new EmbedCommand(message);
                 break;
             default:
                 command = new DefaultCommand(message);
