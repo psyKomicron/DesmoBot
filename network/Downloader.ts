@@ -52,13 +52,12 @@ export class Downloader
         {
             fs.appendFileSync(this.path + "logs.txt", `${url}\n`);
         });
-        console.log("wrote results into" + P.info(this.path + "logs.txt"));
+        console.log("wrote results into " + this.path + "logs.txt");
         return "completed";
     }
 
     private renameFiles(names: Array<string>): Array<string>
     {
-        let nuples: number = 0;
         let map = new Map<string, boolean>();
         for (let i = 0; i < names.length; i++)
         {
@@ -69,15 +68,6 @@ export class Downloader
             else
             {
                 let old_name = names[i];
-                if (nuples > 0)
-                {
-                    readline.moveCursor(process.stdout, 0, -2);
-                    readline.clearLine(process.stdout, 0);
-                    readline.moveCursor(process.stdout, 0, 1);
-                    readline.clearLine(process.stdout, 0);
-                    readline.moveCursor(process.stdout, 0, -1);
-                }
-                process.stdout.write("colliding names : " + P.warn(nuples + 1) + "\n");
                 let current_name = old_name.split(".")[0];
                 let ext = "." + old_name.split(".")[1];
                 let n: number = 1;
@@ -89,31 +79,15 @@ export class Downloader
                         current_name = temp_name;
                     ++n;
                 }
-                process.stdout.write(P.normal(this.printName(old_name) + P.info(" >>> ") + this.printName(current_name) + ext) + "\n");
                 map.set(current_name + ext, true);
-                ++nuples;
             }
         }
-        console.log(P.warn("\nfound " + nuples + " files with the same name"));
         let array = new Array<string>();
         map.forEach((v, k) =>
         {
             array.push(k);
         });
-        if (nuples > 0) console.log(P.info("\tfiles renamed to prevent overwriting"));
         return array;
-    }
-
-    private printName(name: string): string
-    {
-        let res: string;
-        if (name.length > 10)
-        {
-            res = name.substr(0, 10);
-            res += "[...]." + name.split(".")[name.split(".").length - 1];
-        }
-        else res = name;
-        return res;
     }
 
     public get path(): string
