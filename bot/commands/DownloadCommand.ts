@@ -88,8 +88,8 @@ export class DownloadCommand extends Command
                     }
                 }
             }
-            let filepath = "./files/" + channel.name;
-            fs.mkdir(filepath, { recursive: true }, (err) => { if (err) throw err; });
+            let filepath = "./files/downloads/" + channel.name;
+            fs.mkdirSync(filepath, { recursive: true });
             filepath += "/";
             let copyArray: Array<string> = new Array();
             downloader.path = filepath;
@@ -151,7 +151,7 @@ export class DownloadCommand extends Command
         return [limit, type, channel, timeout];
     }
 
-    private hydrateUrls(messages: Discord.Collection<string, Discord.Message>, type: FileType = FileType.IMG): Array<string>
+    private hydrateUrls(messages: Discord.Collection<string, Discord.Message>, type: FileType = this.downloadValues[1]): Array<string>
     {
         let urls = new Array();
         messages.forEach(message =>
@@ -161,6 +161,8 @@ export class DownloadCommand extends Command
                 if (type == FileType.IMG) // image files (png, jpg, gif)
                     if (this.isImage(attachement.url))
                         urls.push(attachement.url);
+                if (type == FileType.FILE)
+                    urls.push(attachement.url);
             });
         });
         return urls;
@@ -224,8 +226,8 @@ export class DownloadCommand extends Command
             case "i":
                 type = FileType.IMG;
                 break;
-            case "pdf":
-                type = FileType.PDF;
+            case "file":
+                type = FileType.FILE;
                 break;
             case "vid":
             case "v":
