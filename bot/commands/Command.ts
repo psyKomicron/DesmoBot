@@ -3,7 +3,7 @@ import Discord = require('discord.js');
 
 export abstract class Command
 {
-    private static _commands: number;
+    private static _commands: number = 0;
     private name: string;
     private values: Map<string, string>;
 
@@ -90,12 +90,12 @@ export abstract class Command
     {
         let filepath = "./files/logs";
         fs.mkdir(filepath, { recursive: true }, (err) => { if (err) throw err; });
-        if (!fs.existsSync("./files/logs/commandlogs.json"))           
+        if (!fs.existsSync("./files/logs/command_logs.json"))           
         {
             let root = [];
-            fs.writeFileSync(filepath + "/commandlogs.json", JSON.stringify(root));
+            fs.writeFileSync(filepath + "/command_logs.json", JSON.stringify(root));
         }
-        var logs = JSON.parse(fs.readFileSync(filepath + "/commandlogs.json").toString());
+        var logs = JSON.parse(fs.readFileSync(filepath + "/command_logs.json").toString());
         let now = new Date(Date.now());
         let data = {};
         map.forEach((value, key) =>
@@ -120,6 +120,6 @@ export abstract class Command
             ]
         }
         logs.push(json);
-        fs.writeFileSync(filepath + "/commandlogs.json", JSON.stringify(logs));
+        fs.writeFileSync(filepath + "/command_logs.json", JSON.stringify(logs));
     }
 }
