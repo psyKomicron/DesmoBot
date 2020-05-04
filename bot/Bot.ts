@@ -1,9 +1,9 @@
 import Discord = require('discord.js');
 import readline = require('readline');
 import { TokenReader } from './Readers';
-import { Printer } from './ui/Printer';
 import { CommandFactory } from './commands/factory/CommandFactory';
 import { clearInterval } from 'timers';
+import { Printer } from '../ui/Printer';
 
 export class Bot 
 {
