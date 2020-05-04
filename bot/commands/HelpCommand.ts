@@ -3,12 +3,9 @@ import { Command } from "./Command";
 
 export class HelpCommand extends Command
 {
-    private message: Discord.Message;
-
     public constructor(message: Discord.Message)
     {
-        super("help");
-        this.message = message;
+        super("help", message);
     }
 
     public async execute(): Promise<Object> 

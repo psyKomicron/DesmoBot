@@ -6,7 +6,6 @@ import { Printer } from '../../ui/Printer';
 
 export class VoteCommand extends Command
 {
-    private message: Discord.Message;
     private collector: Discord.ReactionCollector;
     private votes: Map<Discord.User, string> = new Map();
     private emojis: Map<string, boolean> = new Map();
@@ -14,9 +13,8 @@ export class VoteCommand extends Command
 
     public constructor(message: Discord.Message)
     {
-        super("vote");
-        this.message = message;
-        this.voteValues = this.getParams(this.parseMessage(message));
+        super("vote", message);
+        this.voteValues = this.getParams(this.parseMessage());
         let emojiReader = new EmojiReader();
         this.emojis.set(emojiReader.getEmoji("green_check"), true);
         this.emojis.set(emojiReader.getEmoji("green_cross"), true);

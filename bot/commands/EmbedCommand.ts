@@ -3,23 +3,24 @@ import fs = require('fs');
 import { Command } from './Command';
 import { Printer } from '../../ui/Printer';
 import { Downloader } from '../../network/Downloader';
+import { JSONParser } from '../../ui/discord/JSONParser';
 
 export class EmbedCommand extends Command
 {
-    private message: Discord.Message;
-    private embedValues: [string, boolean]
+    private embedValues: [Discord.TextChannel, boolean]
 
     public constructor(message: Discord.Message)
     {
-        super("embed builder");
-        this.message = message;
-        this.embedValues = this.getParams(this.parseMessage(this.message));
+        super("embed builder", message);
+        this.embedValues = this.getParams(this.parseMessage());
+        if (this.embedValues[0] == undefined)
+            throw "Channel cannot be resolved";
     }
 
     public async execute(): Promise<Object> 
     {
         // 1 -get & download file
-        // 2 -parse & check message
+        // 2 -check message & parse
         let fileUrl: string;
         this.message.attachments.forEach(value =>
         {
@@ -27,23 +28,37 @@ export class EmbedCommand extends Command
         });
         if (fileUrl)
         {
-            this.embedValues[0] = Downloader.getFileName(fileUrl);
+            let jsonName = Downloader.getFileName(fileUrl);
+
             console.log(Printer.args(
-                ["json file name", "json file url", "delete after execution"],
-                [`${this.embedValues[0]}`, `${fileUrl}`, `${this.embedValues[1]}`]
+                ["json file name", "json file url", "delete after execution", "channel"],
+                [`${jsonName}`, `${fileUrl}`, `${this.embedValues[1]}`, `${this.embedValues[0].name}`]
             ));
-            let downloader = new Downloader();
-            downloader.path = "./files/";
+
+            let downloader = new Downloader(this.Name);
             await downloader.download([fileUrl]);
+
             setTimeout(() =>
             {
-                let fileContent = fs.readFileSync(`./files/${this.embedValues[0]}`).toString();
+                let fileContent = fs.readFileSync(`${downloader.path}${jsonName}`).toString();
                 try
                 {
                     let json = JSON.parse(fileContent);
-                    if (this.checkProperties(json))
+                    let parser = new JSONParser();
+                    const template =
                     {
-                        console.log(Printer.info("Object has all required properties"));
+                        "embed": {
+                            "color": 1,
+                            "description": "",
+                            "fields": [ { "title": "", "description": "" } ],
+                            "footer": "",
+                            "title": ""
+                        },
+                    };
+                    if (parser.matchTemplate(json, template))
+                    {
+                        Printer.clearPrint("Object has all required properties", [0, -1]);
+                        console.log();
                         let embed = json["embed"];
                         console.log(Printer.args(
                             ["color", "description", "fields", "footer", "title"],
@@ -61,7 +76,7 @@ export class EmbedCommand extends Command
                             let value = fields[i]["description"];
                             discordEmbed.addField(title, value);
                         }
-                        this.message.channel.send(discordEmbed);
+                        this.embedValues[0].send(discordEmbed);
                     }
                     else
                     {
@@ -70,59 +85,63 @@ export class EmbedCommand extends Command
                 }
                 catch (error)
                 {
-                    console.error(Printer.error(error));
+                    if (error instanceof Error)
+                    {
+                        if (error.message == "Cannot use object")
+                        {
+                            Printer.clearPrint("", [0, -1]);
+                            console.error(Printer.error(error.message));
+                        }
+                    }
+                    else
+                        console.error(error);
+
+                }
+                // cleaning directory async
+                finally
+                {
+                    // removing the used json file
+                    fs.unlink(`${downloader.path}${jsonName}`, (err) =>
+                    {
+                        if (err) throw err;
+                        else
+                        {
+                            // removing the automaticaly generated log file
+                            fs.unlink(`${downloader.path}logs.txt`, (err) =>
+                            {
+                                if (err) throw err;
+                                else
+                                {
+                                    // removing the json & log file directory
+                                    fs.rmdir(`${downloader.path}`, (err) =>
+                                    {
+                                        if (err) throw err;
+                                    })
+                                }
+                            });
+                        }
+                    });
                 }
             }, 1000);
         }
         else
         {
             console.log(Printer.args(
-                ["json file name", Printer.error("json file url"), "delete after execution"],
-                [`${this.embedValues[0]}`, `${Printer.error(fileUrl)}`, `${this.embedValues[1]}`]
+                [Printer.error("json file url"), "delete after execution"],
+                [`${Printer.error(fileUrl)}`, `${this.embedValues[1]}`]
             ));
             throw new Error("no valid uri/url for the json file");
         }
         // 3 -delete original message with 1 sec delay
         if (this.message.deletable && this.embedValues[1])
-            this.message.delete({ timeout: 1000 });
+            this.message.delete({ timeout: 100 });
         return "running";
     }
 
-    private checkProperties(json: any): boolean
-    {
-        const properties = ["color", "description", "fields", "footer", "title"];
-        let checked = false;
-        let hasAll = false;
-        let embed = json["embed"];
-        for (var i = 0; i < properties.length; i++)
-        {
-            if (!embed[properties[i]])
-            {
-                hasAll = false;
-                console.log("Object doesn't have property " + Printer.error(properties[i]));
-                break;
-            }
-            else hasAll = true;
-        }
-        if (hasAll)
-        {
-            let fields = embed["fields"];
-            for (var j = 0; j < fields.length; j++)
-            {
-                if (!fields[j]["title"] || !fields[j]["description"])
-                {
-                    checked = false;
-                    break;
-                }
-                else checked = true;
-            }
-        }
-        return checked;
-    }
-
-    private getParams(args: Map<string, string>): [string, boolean]
+    private getParams(args: Map<string, string>): [Discord.TextChannel, boolean]
     {
         let willDelete: boolean = false;
+        let channel: Discord.TextChannel = this.message.channel instanceof Discord.TextChannel ? this.message.channel : undefined;
         args.forEach((value, key) =>
         {
             switch (key)
@@ -130,9 +149,13 @@ export class EmbedCommand extends Command
                 case "d":
                     willDelete = true;
                     break;
+                case "c":
+                    if (this.resolveChannel(value))
+                        channel = this.resolveChannel(value);
+                    break;
                 default:
             }
         });
-        return ["", willDelete];
+        return [channel, willDelete];
     }
 }

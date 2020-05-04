@@ -1,20 +1,18 @@
 import Discord = require('discord.js');
 import readline = require('readline');
 import { Command } from "./Command";
-import { Printer } from '../ui/Printer';
-import { ProgressBar } from '../../ui/web/effects/ProgressBar';
 import { clearTimeout } from 'timers';
+import { Printer } from '../../ui/Printer';
+import { ProgressBar } from '../../ui/effects/ProgressBar';
 
 export class DeleteCommand extends Command
 {
-    private message: Discord.Message;
     private delete_values: [number, Discord.TextChannel, string];
 
     public constructor(message: Discord.Message)
     {
-        super("delete");
-        this.message = message;
-        this.delete_values = this.getParams(this.parseMessage(message));
+        super("delete", message);
+        this.delete_values = this.getParams(this.parseMessage());
     }
 
     public async execute(): Promise<Object> 
@@ -163,9 +161,4 @@ export class DeleteCommand extends Command
         else res = message.content;
         return res;
     }
-}
-
-interface Filter
-{
-    sort(value: any, key: any): Function;
 }

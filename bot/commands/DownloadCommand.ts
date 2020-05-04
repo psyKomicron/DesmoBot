@@ -1,24 +1,21 @@
 import Discord = require('discord.js');
-import fs = require('fs');
 import { Command } from "./Command";
 import { FileType } from "../Bot";
-import { Printer } from '../ui/Printer';
 import { EmojiReader } from '../Readers';
 import { Downloader } from '../../network/Downloader';
-import { ProgressBar } from '../../ui/web/effects/ProgressBar';
 import { WebServer } from '../../ui/web/WebServer';
+import { Printer } from '../../ui/Printer';
+import { ProgressBar } from '../../ui/effects/ProgressBar';
 
 export class DownloadCommand extends Command
 {
     private emojiReader: EmojiReader = new EmojiReader();
-    private message: Discord.Message;
     private downloadValues: [number, FileType, Discord.Channel, number];
 
     public constructor(message: Discord.Message)
     {
-        super("download");
-        this.message = message;
-        this.downloadValues = this.getParams(this.parseMessage(message));
+        super("download", message);
+        this.downloadValues = this.getParams(this.parseMessage());
     }
 
     public async execute(): Promise<string> 
@@ -51,22 +48,16 @@ export class DownloadCommand extends Command
 
     private async initiateDownload(numberOfFiles: number, channel: Discord.Channel): Promise<number>
     {
-        let downloader = new Downloader();
         let lastMessageID: Discord.Snowflake = null;
         let limit = numberOfFiles > 50 ? 50 : numberOfFiles;
         let totalDownloads: number = 0;
         if (channel instanceof Discord.TextChannel)
         {
-            console.log("downloading files with a " + Printer.info("" + limit) + " chunk");
             let messages = await channel.messages.fetch({ limit: limit });
             let filteredMessages = this.filterMessages(messages);
-            console.log(Printer.normal("found " + Printer.info(filteredMessages.size) + " messages with attachements..."));
             let urls = this.hydrateUrls(filteredMessages);
-            console.log("have " + Printer.info(urls.length) + " matching files");
-
             if (urls.length < numberOfFiles)
             {
-                console.log(Printer.normal("not enough urls found, searching deeper"));
                 let bar = new ProgressBar(numberOfFiles, "fetching urls");
                 bar.start();
                 // fetching all requested urls
@@ -75,7 +66,6 @@ export class DownloadCommand extends Command
                     lastMessageID = await messages.last()?.id;
                     if (lastMessageID == undefined)
                     {
-                        console.log(Printer.warn("not more messages to parse, breaking"));
                         break;
                     }
                     else
@@ -88,17 +78,13 @@ export class DownloadCommand extends Command
                     }
                 }
             }
-            let filepath = "./files/downloads/" + channel.name;
-            fs.mkdirSync(filepath, { recursive: true });
-            filepath += "/";
             let copyArray: Array<string> = new Array();
-            downloader.path = filepath;
+            let downloader = new Downloader(channel.name);
             for (let i: number = 0; i < urls.length && i < numberOfFiles; i++, totalDownloads++)
             {
                 if (urls[i] != undefined)
                     copyArray.push(urls[i]);
             }
-            console.log(`sending ${Printer.info(copyArray.length)} items in ${filepath} (user requested ${Printer.info(numberOfFiles)})`);
             downloader.download(copyArray)
                 .then(() =>
                 {
@@ -133,10 +119,9 @@ export class DownloadCommand extends Command
                     }
                     break;
                 case "c":
-                    let resolvedChannel = this.message.guild.channels.resolve(value);
-                    if (resolvedChannel && resolvedChannel instanceof Discord.TextChannel)
+                    if (this.resolveChannel(value))
                     {
-                        channel = resolvedChannel;
+                        channel = this.resolveChannel(value);
                     }
                     break;
                 case "s":

@@ -3,12 +3,9 @@ import { Command } from './Command';
 
 export class DefaultCommand extends Command
 {
-    private message: Discord.Message;
-
     public constructor(message: Discord.Message)
     {
-        super("default");
-        this.message = message;
+        super("default", message);
     }
     
     public async execute(): Promise<Object> 
