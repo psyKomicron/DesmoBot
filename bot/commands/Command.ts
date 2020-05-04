@@ -5,19 +5,46 @@ export abstract class Command
 {
     private static _commands: number = 0;
     private name: string;
+    private _message: Discord.Message;
     private values: Map<string, string>;
 
-    protected constructor(name: string)
+    protected constructor(name: string, message: Discord.Message)
     {
+        Command._commands++;
         this.name = name;
+        this._message = message;
     }
 
     public abstract async execute(): Promise<Object>;
 
-    protected parseMessage(message: Discord.Message): Map<string, string>
+    public static get Commands(): number
+    {
+        return this._commands;
+    }
+
+    public get Name(): string
+    {
+        return this.name;
+    }
+
+    public get Values(): Map<string, string>
+    {
+        return this.values;
+    }
+    public set Values(values: Map<string, string>)
+    {
+        this.values = values;
+    }
+
+    protected get message(): Discord.Message
+    {
+        return this._message;
+    }
+
+    protected parseMessage(): Map<string, string>
     {
         // parse with args (-x -y...)
-        let rawContent = message.content.substring(1);
+        let rawContent = this._message.content.substring(1);
         // remove command name
         let substr = 0;
         while (substr < rawContent.length && rawContent[substr] != "-") { substr++; }
@@ -63,27 +90,19 @@ export abstract class Command
             }
         }
         this.values = map;
-        this.writeLogs(map, message);
+        this.writeLogs(map, this._message);
         return map;
     }
 
-    public static get Commands(): number
+    protected resolveChannel(value: string): Discord.TextChannel
     {
-        return this._commands;
-    }
-
-    public get Name(): string
-    {
-        return this.name;
-    }
-
-    public get Values(): Map<string, string>
-    {
-        return this.values;
-    }
-    public set Values(values: Map<string, string>)
-    {
-        this.values = values;
+        let channel: Discord.TextChannel;
+        let resolvedChannel = this._message.guild.channels.resolve(value);
+        if (resolvedChannel && resolvedChannel instanceof Discord.TextChannel)
+        {
+            channel = resolvedChannel;
+        }
+        return channel;
     }
 
     private writeLogs(map: Map<string, string>, message: Discord.Message)
@@ -104,19 +123,27 @@ export abstract class Command
         });
         var json = {
             "user": [
-                { "username": message.author.username },
-                { "discriminator": message.author.discriminator }
+                {
+                    "username": message.author.username,
+                    "discriminator": message.author.discriminator
+                }
             ],
             "command": [
-                { "name": this.name },
-                { "arguments": data },
-                { "command number": `${Command.Commands}` }
+                {
+                    "name": this.name,
+                    "arguments": data,
+                    "command number": `${Command.Commands}`,
+                    "message id": `${this.message.id}`,
+                    "message": this.message
+                }
             ],
             "date": [
-                { "day": now.getDate() },
-                { "month": now.getMonth() },
-                { "year": now.getFullYear() },
-                { "epoch": Date.now() }
+                {
+                    "day": now.getDate(),
+                    "month": now.getMonth(),
+                    "year": now.getFullYear(),
+                    "epoch": Date.now()
+                }
             ]
         }
         logs.push(json);
