@@ -21,10 +21,17 @@ ${Printer.error("-------------------------------------")}`;
 
     public static print(content: string, position: [number, number])
     {
-        Printer.saveCursor();
+        //Printer.saveCursor();
         readline.moveCursor(process.stdout, position[0], position[1]);
         console.log(content);
-        Printer.restoreCursor();
+        //Printer.restoreCursor();
+    }
+
+    public static clearPrint(content: string, position: [number, number])
+    {
+        readline.moveCursor(process.stdout, position[0], position[1]);
+        readline.clearLine(process.stdout, 0);
+        console.log(content);
     }
 
     /**
@@ -168,7 +175,7 @@ ${Printer.error("-------------------------------------")}`;
     }
     private static printName(name: string)
     {
-        if (name.length > 20)
+        if (name.length > 23)
         {
             let firstName = "";
             for (var i = 0; i < 10; i++)
