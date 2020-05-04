@@ -1,12 +1,10 @@
 import fs = require('fs');
-import readline = require('readline');
-import http = require('http');
+import express = require('express');
 import { Printer } from '../Printer';
 
 export class WebServer
 {
     private timeout: number;
-    private server: http.Server;
 
     public constructor(timeout: number = 60)
     {
@@ -15,33 +13,59 @@ export class WebServer
 
     public startService(): void
     {
-        console.log("Server running : localhost:9001");
-        this.server = http.createServer((req, res) =>
+        var app = express();
+        app.get("/", (req, res) =>
         {
-            res.writeHead(200);
-            res.end(new HTMLReader().get);
+            res.setHeader("Content-Type", "text/plain");
+            res.send("bite");
         });
-        this.server.listen(9001);
-        setTimeout(() =>
-        {
-            this.stopService();
-        }, this.timeout);
-    }
-
-    private stopService()
-    {
-        console.log(Printer.info("Closing server"));
-        readline.moveCursor(process.stdout, 0, -1);
-        this.server.close();1
+        app.listen(9001);
+        console.log(Printer.info("Server running : localhost:9001"));
     }
 }
 
 /**Reads the html file used to download files */
 class HTMLReader
 {
+    private imagesPaths: Array<string>;
+
+    public constructor()
+    {
+        this.imagesPaths = this.loadImages();
+    }
+
     public get get(): string
     {
         let file = fs.readFileSync("./files/index.html");
+        // parse html & add images
         return file.toString();
+    }
+
+    private loadImages(path: string = "./files/downloads/"): Array<string>
+    {
+        const directory = path;
+        let directories = new Array<string>();
+        fs.readdirSync(directory).forEach(dir =>
+        {
+            try
+            {
+                fs.accessSync(directory + dir);
+                let path = `${directory}${dir}/`;
+
+                if (fs.lstatSync(path).isDirectory())
+                {
+                    this.loadImages(path).forEach(value =>
+                    {
+                        directories.push(value);
+                    });
+                }
+                else
+                    directories.push(dir);
+            } catch (e)
+            {
+                console.log(Printer.error(`Directory ${directory}${dir} does not exists`));
+            }
+        });
+        return directories;
     }
 }
