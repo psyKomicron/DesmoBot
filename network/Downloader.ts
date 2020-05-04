@@ -1,12 +1,24 @@
 import fs = require('fs');
 import readline = require('readline');
 import request = require('request');
-import { Printer as P }  from '../bot/ui/Printer';
-import { ProgressBar } from '../ui/web/effects/ProgressBar';
+import { Printer } from '../ui/Printer';
+import { ProgressBar } from '../ui/effects/ProgressBar';
 
 export class Downloader
 {
-    private _path: string;
+    private readonly _path: string;
+
+    public constructor(directory: string)
+    {
+        if (directory != "." && directory != "..")
+        {
+            this._path = `./files/downloads/${directory}/`;
+            if (!fs.existsSync(this.path))
+            {
+                fs.mkdirSync(this.path, { recursive: true });
+            }
+        }
+    }
 
     public async download(urls: Array<string>): Promise<string>
     {
@@ -26,12 +38,12 @@ export class Downloader
             let req = await request.get(urls[i]);
             req.on("response", (response) =>
             {
-                if (response.statusCode !== 200) console.error(P.error(`status code is ${response.statusCode}`));
+                if (response.statusCode !== 200) console.error(Printer.error(`status code is ${response.statusCode}`));
             });
 
             req.on("error", err =>
             {
-                console.error(`${P.error(names[i])} -> ${err})`);
+                console.error(`${Printer.error(names[i])} -> ${err})`);
                 fs.appendFileSync(`${this.path}/logs.txt`, names[i] + " -> error ");
                 fs.unlinkSync(path);
             });
@@ -93,10 +105,6 @@ export class Downloader
     public get path(): string
     {
         return this._path;
-    }
-    public set path(value: string)
-    {
-        this._path = value;
     }
 
     public static getFileName(url: string): string
