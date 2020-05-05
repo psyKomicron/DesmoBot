@@ -5,6 +5,7 @@ import { Printer } from '../Printer';
 export class WebServer
 {
     private timeout: number;
+    private app: any;
 
     public constructor(timeout: number = 60)
     {
@@ -13,13 +14,18 @@ export class WebServer
 
     public startService(): void
     {
-        var app = express();
-        app.get("/", (req, res) =>
+        this.app = express();
+        this.app.get("/", (req, res) =>
         {
-            res.setHeader("Content-Type", "text/plain");
-            res.send("bite");
+            res.setHeader("Content-Type", "");
+            let page = new HTMLReader().get;
+            res.send(page);
         });
-        app.listen(9001);
+        this.app.listen(9001);
+        setTimeout(() =>
+        {
+            this.app.
+        }, this.timeout);
         console.log(Printer.info("Server running : localhost:9001"));
     }
 }
@@ -38,7 +44,14 @@ class HTMLReader
     {
         let file = fs.readFileSync("./files/index.html");
         // parse html & add images
-        return file.toString();
+        let page = `<!DOCTYPE html><html><style>body { font-family: sans-serif; }</style><body>`;
+        this.loadImages().forEach(value =>
+        {
+            page += `<img src="${value}"></a>`;
+        });
+        page += `</body></html>`;
+        //return file.toString();
+        return page;
     }
 
     private loadImages(path: string = "./files/downloads/"): Array<string>
