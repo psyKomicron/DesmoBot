@@ -1,14 +1,14 @@
 // necessary imports
-import { Bot } from "./bot/Bot";
-import { StarEffect } from "./ui/effects/StarEffect";
-import { Printer } from "./ui/Printer";
+import { Bot } from "./src/bot/Bot";
+import { Printer } from "./src/ui/effects/Printer";
+import { StarEffect } from "./src/ui/effects/StarEffect";
 // end necessary imports
-import { WebServer } from "./ui/web/WebServer";
+import { WebServer } from "./src/ui/web/WebServer";
 
 // ------- Tests --------
-new WebServer(480).startService();
+//new WebServer(480).startService();
 // -------- Code --------
-/*Printer.startUp();
+Printer.startUp();
 let loadingEffect = new StarEffect("", [-17, -1]);
 let id = loadingEffect.start();
 try
@@ -17,4 +17,4 @@ try
 } catch (e)
 {
     console.log(e);
-}*/
+}

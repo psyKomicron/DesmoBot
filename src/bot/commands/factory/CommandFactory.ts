@@ -1,12 +1,11 @@
 import Discord = require('discord.js');
-import { Command } from "../Command";
-import { DownloadCommand } from '../DownloadCommand';
-import { DeleteCommand } from '../DeleteCommand';
-import { DefaultCommand } from '../DefaultCommand';
-import { HelpCommand } from '../HelpCommand';
-import { VoteCommand } from '../VoteCommand';
-import { Bot } from '../../Bot';
-import { EmbedCommand } from '../EmbedCommand';
+import { Command } from '../commands/Command';
+import { DownloadCommand } from '../commands/DownloadCommand';
+import { DeleteCommand } from '../commands/DeleteCommand';
+import { HelpCommand } from '../commands/HelpCommand';
+import { VoteCommand } from '../commands/VoteCommand';
+import { EmbedCommand } from '../commands/EmbedCommand';
+import { DefaultCommand } from '../commands/DefaultCommand';
 
 export class CommandFactory
 {

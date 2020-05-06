@@ -1,8 +1,7 @@
 import Discord = require('discord.js');
-import readline = require('readline');
 import { Command } from './Command';
-import { EmojiReader } from '../Readers';
-import { Printer } from '../../ui/Printer';
+import { EmojiReader } from '../../Readers';
+import { Printer } from '../../../ui/effects/Printer';
 
 export class VoteCommand extends Command
 {

@@ -1,5 +1,5 @@
 import fs = require('fs');
-import { Printer } from '../ui/Printer';
+import { Printer } from '../ui/effects/Printer';
 
 export class TokenReader
 {
@@ -23,7 +23,7 @@ export class EmojiReader
         let res = undefined;
         try
         {
-            res = fs.readFileSync("./bot/emojis/" + name, "UTF-8");
+            res = fs.readFileSync("./src/bot/emojis/" + name, "UTF-8");
         }
         catch (error)
         {

@@ -1,9 +1,9 @@
 import Discord = require('discord.js');
 import fs = require('fs');
 import { Command } from './Command';
-import { Printer } from '../../ui/Printer';
-import { Downloader } from '../../network/Downloader';
-import { JSONParser } from '../../ui/discord/JSONParser';
+import { Downloader } from '../../../network/Downloader';
+import { Printer } from '../../../ui/effects/Printer';
+import { JSONParser } from '../../../ui/discord/JSONParser';
 
 export class EmbedCommand extends Command
 {

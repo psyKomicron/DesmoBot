@@ -1,4 +1,4 @@
-import { Printer } from '../Printer';
+import { Printer } from "../effects/Printer";
 
 export class JSONParser
 {

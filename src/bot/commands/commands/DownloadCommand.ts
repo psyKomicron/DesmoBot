@@ -1,11 +1,11 @@
 import Discord = require('discord.js');
 import { Command } from "./Command";
-import { FileType } from "../Bot";
-import { EmojiReader } from '../Readers';
-import { Downloader } from '../../network/Downloader';
-import { WebServer } from '../../ui/web/WebServer';
-import { Printer } from '../../ui/Printer';
-import { ProgressBar } from '../../ui/effects/ProgressBar';
+import { Printer } from '../../../ui/effects/Printer';
+import { FileType } from '../../Bot';
+import { EmojiReader } from '../../Readers';
+import { ProgressBar } from '../../../ui/effects/ProgressBar';
+import { Downloader } from '../../../network/Downloader';
+import { WebServer } from '../../../ui/web/WebServer';
 
 export class DownloadCommand extends Command
 {

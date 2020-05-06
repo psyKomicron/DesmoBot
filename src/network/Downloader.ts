@@ -1,7 +1,6 @@
 import fs = require('fs');
-import readline = require('readline');
 import request = require('request');
-import { Printer } from '../ui/Printer';
+import { Printer } from '../ui/effects/Printer';
 import { ProgressBar } from '../ui/effects/ProgressBar';
 
 export class Downloader

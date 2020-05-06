@@ -2,8 +2,8 @@ import Discord = require('discord.js');
 import readline = require('readline');
 import { Command } from "./Command";
 import { clearTimeout } from 'timers';
-import { Printer } from '../../ui/Printer';
-import { ProgressBar } from '../../ui/effects/ProgressBar';
+import { Printer } from '../../../ui/effects/Printer';
+import { ProgressBar } from '../../../ui/effects/ProgressBar';
 
 export class DeleteCommand extends Command
 {
