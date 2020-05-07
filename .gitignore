@@ -16,6 +16,8 @@ obj
 
 # program generated
 files
+imgs
 *.png
 *.jpg
 *.pdf
+*.txt
