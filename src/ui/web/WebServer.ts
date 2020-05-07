@@ -11,6 +11,10 @@ export class WebServer
 
     public constructor(timeout: number = 60)
     {
+        if (WebServer.on)
+        {
+            throw "WebServer instance already running";
+        }
         this.timeout = timeout * 1000;
     }
 
@@ -18,17 +22,16 @@ export class WebServer
     {
         if (!WebServer.on)
         {
+            WebServer.on = true;
             this.app = express();
             this.app.get("/", (req, res) =>
             {
                 res.setHeader("Content-Type", "");
-                let page = new HTMLReader().get;
                 res.render('index');
             });
             this.app.set("view engine", "pug");
             const server = http.createServer(this.app.listen(9001, () =>
             {
-                WebServer.on = true;
                 console.log(Printer.info("Server running : localhost:9001"));
             }));
             server.on("close", () =>
@@ -38,6 +41,7 @@ export class WebServer
             });
             setTimeout(() => server.close(), this.timeout);
         }
+        else console.log(Printer.error("Server already running..."));
     }
 }
 
@@ -71,17 +75,17 @@ class HTMLReader
                 }
             }
         });
-
         // web page
         let page = `<!DOCTYPE html><html><style>body { font-family: sans-serif; }</style><body>`;
-        images.forEach(image =>
-        {
-            page += `<img src="${workingDir + image}" height="50" width="50">`;
-        });
+        images.forEach(image => page += `<img src="${workingDir + image}" height="50" width="50">`);
         page += `</body></html>`;
         return page;
     }
 
+    /**
+     * Search downloaded images & return the path to them
+     * @param path Where to search the images. Used for recursion.
+     */
     private searchImages(path: string = "./files/downloads/"): Array<string>
     {
         const directory = path;
@@ -94,18 +98,10 @@ class HTMLReader
             {
                 fs.accessSync(directory + file);
                 let filePath = `${directory}${file}`;
-
                 if (fs.lstatSync(filePath).isDirectory())
-                {
-                    this.searchImages(filePath + "/").forEach(value =>
-                    {
-                        directories.push(value);
-                    });
-                }
+                    this.searchImages(filePath + "/").forEach(value => directories.push(value));
                 else
-                {
                     directories.push(filePath);
-                }
             } catch (e)
             {
                 console.error(Printer.error(e));
