@@ -21,10 +21,8 @@ ${Printer.error("-------------------------------------")}`;
 
     public static print(content: string, position: [number, number])
     {
-        //Printer.saveCursor();
         readline.moveCursor(process.stdout, position[0], position[1]);
         console.log(content);
-        //Printer.restoreCursor();
     }
 
     public static clearPrint(content: string, position: [number, number])
