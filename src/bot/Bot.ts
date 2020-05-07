@@ -1,3 +1,4 @@
+import fs = require('fs');
 import Discord = require('discord.js');
 import readline = require('readline');
 import { TokenReader } from './Readers';
@@ -25,6 +26,16 @@ export class Bot
 
     private init(id: NodeJS.Timeout): void
     {
+        // initiate directories
+        const directories = ["./files", "./files/downloads", "./files/logs"];
+        for (var i = 0; i < directories.length; i++)
+        {
+            if (!fs.existsSync(directories[i]))
+            {
+                fs.mkdir(directories[i], { recursive: false }, () => { });
+            }
+        }
+        // initiate bot
         this.client.on("ready", () =>
         {
             clearInterval(id);
