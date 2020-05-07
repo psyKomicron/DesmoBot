@@ -55,18 +55,13 @@ ${Printer.error("-------------------------------------")}`;
         {
             let maxLength = -1;
             for (let i = 0; i < contents.length; i++)
-            {
                 if (contents[i].length > maxLength) maxLength = contents[i].length;
-            }
             maxLength += 4;
             let lines = "";
             for (let i = 0; i < contents.length; i++)
             {
                 let arg = "[+] " + contents[i];
-                while (arg.length < maxLength)
-                {
-                    arg += " ";
-                }
+                while (arg.length < maxLength) arg += " ";
                 if (i != contents.length - 1)
                     arg += ` : ${Printer.printName(values[i])} \n`;
                 else
