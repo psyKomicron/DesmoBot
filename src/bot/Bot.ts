@@ -29,12 +29,8 @@ export class Bot
         // initiate directories
         const directories = ["./files", "./files/downloads", "./files/logs"];
         for (var i = 0; i < directories.length; i++)
-        {
             if (!fs.existsSync(directories[i]))
-            {
-                fs.mkdir(directories[i], { recursive: false }, () => { });
-            }
-        }
+                fs.mkdir(directories[i], () => { });
         // initiate bot
         this.client.on("ready", () =>
         {
