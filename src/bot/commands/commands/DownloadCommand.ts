@@ -5,7 +5,6 @@ import { FileType } from '../../Bot';
 import { EmojiReader } from '../../Readers';
 import { ProgressBar } from '../../../ui/effects/ProgressBar';
 import { Downloader } from '../../../network/Downloader';
-import { WebServer } from '../../../ui/web/WebServer';
 
 export class DownloadCommand extends Command
 {
@@ -21,6 +20,7 @@ export class DownloadCommand extends Command
     public async execute(): Promise<string> 
     {
         let limit = this.downloadValues[0];
+        if (limit < 0) return "error";
         let type = this.downloadValues[1];
         let channel = this.downloadValues[2];
         let name = "";
@@ -46,10 +46,11 @@ export class DownloadCommand extends Command
         return "executed";
     }
 
-    private async initiateDownload(numberOfFiles: number, channel: Discord.Channel): Promise<number>
+    private async initiateDownload(numberOfFiles: number, channel: Discord.Channel): Promise<void>
     {
         let lastMessageID: Discord.Snowflake = null;
-        let limit = numberOfFiles > 50 ? 50 : numberOfFiles;
+
+        let limit = numberOfFiles > 50 ? 100 : 50;
         let totalDownloads: number = 0;
         if (channel instanceof Discord.TextChannel)
         {
@@ -71,7 +72,7 @@ export class DownloadCommand extends Command
                     else
                     {
                         messages = await channel.messages.fetch({ limit: limit, before: lastMessageID });
-                        filteredMessages = messages.filter(v => v.attachments.size > 0);
+                        filteredMessages = this.filterMessages(messages);
                         let newUrls = this.hydrateUrls(filteredMessages);
                         newUrls.forEach(v => urls.push(v));
                         bar.update(urls.length);
@@ -83,15 +84,69 @@ export class DownloadCommand extends Command
             for (let i: number = 0; i < urls.length && i < numberOfFiles; i++, totalDownloads++)
             {
                 if (urls[i] != undefined)
+                {
                     copyArray.push(urls[i]);
+                }
             }
             downloader.download(copyArray)
-                .then(() =>
+                .then((message) =>
                 {
-                    new WebServer(this.downloadValues[3]).startService();
+                    console.log(message);
                 });
         }
-        return totalDownloads;
+    }
+
+    private hydrateUrls(urls: Array<string>, type: FileType = this.downloadValues[1]): Array<string>
+    {
+        let filteredUrls = new Array();
+        urls.forEach(url =>
+        {
+            if (type == FileType.IMG) // image files (png, jpg, gif)
+                if (this.isImage(url))
+                    filteredUrls.push(url);
+            if (type == FileType.FILE)
+                filteredUrls.push(url);
+        });
+        return filteredUrls;
+    }
+
+    /**
+     * /!\ ONLY SUPPORTING PICTURES FOR NOW /!\
+     * Filter the messages looking at their attachements or if they pack a link
+     * @param messages messages to filter
+     * @param type filter for the messages
+     */
+    private filterMessages(messages: Discord.Collection<string, Discord.Message>, type: FileType = FileType.IMG): Array<string>
+    {
+        let filteredArray = new Array<string>();
+        messages.forEach((message, flake) =>
+        {
+            if (message.attachments.size > 0)
+            {
+                message.attachments.forEach(attachement =>
+                {
+                    filteredArray.push(attachement.url);
+                });
+            }
+            else
+            {
+                let content = message.content;
+                if (type == FileType.IMG)
+                {
+                    let regex =
+                        /(https?: \/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
+                    let url = content.match(regex);
+                    if (url != undefined)
+                    {
+                        if (this.isImage(url[0]))
+                        {
+                            filteredArray.push(url[0]);
+                        }
+                    }
+                }
+            }
+        });
+        return filteredArray;
     }
 
     /**
@@ -134,53 +189,6 @@ export class DownloadCommand extends Command
             }
         });
         return [limit, type, channel, timeout];
-    }
-
-    private hydrateUrls(messages: Discord.Collection<string, Discord.Message>, type: FileType = this.downloadValues[1]): Array<string>
-    {
-        let urls = new Array();
-        messages.forEach(message =>
-        {
-            message.attachments.forEach(attachement =>
-            {
-                if (type == FileType.IMG) // image files (png, jpg, gif)
-                    if (this.isImage(attachement.url))
-                        urls.push(attachement.url);
-                if (type == FileType.FILE)
-                    urls.push(attachement.url);
-            });
-        });
-        return urls;
-    }
-
-    /**
-     * /!\ ONLY SUPPORTING PICTURES FOR NOW /!\
-     * Filter the messages looking at their attachements or if they pack a link
-     * @param messages messages to filter
-     * @param type filter for the messages
-     */
-    private filterMessages(messages: Discord.Collection<string, Discord.Message>, type: FileType = FileType.IMG): Discord.Collection<string, Discord.Message>
-    {
-        let filteredArray = new Discord.Collection<string, Discord.Message>();
-        messages.forEach((message, flake) =>
-        {
-            if (message.attachments.size > 0)
-                filteredArray.set(flake, message);
-            else
-            {
-                let content = message.content;
-                if (type == FileType.IMG)
-                {
-                    // will fail when the link is contained in a text -> need to extract it
-                    if (this.isImage(content))
-                    {
-                        message.attachments.forEach(attachement => { attachement.url = content })
-                        filteredArray.set(flake, message);
-                    }
-                }
-            }
-        });
-        return messages.filter(v => v.attachments.size > 0);;
     }
 
     private isImage(content: string)
