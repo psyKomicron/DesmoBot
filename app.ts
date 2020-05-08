@@ -6,9 +6,9 @@ import { StarEffect } from "./src/ui/effects/StarEffect";
 import { WebServer } from "./src/ui/web/WebServer";
 
 // ------- Tests --------
-new WebServer().startService();
+//new WebServer().startService();
 // -------- Code --------
-/*Printer.startUp();
+Printer.startUp();
 let loadingEffect = new StarEffect("", [-17, -1]);
 let id = loadingEffect.start();
 try
@@ -17,4 +17,4 @@ try
 } catch (e)
 {
     console.log(e);
-}*/
+}
