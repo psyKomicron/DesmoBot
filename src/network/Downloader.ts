@@ -63,8 +63,7 @@ export class Downloader
         {
             fs.appendFileSync(this.path + "logs.txt", `${url}\n`);
         });
-        console.log("wrote results into " + this.path + "logs.txt");
-        return "completed";
+        return "wrote results into " + this.path + "logs.txt";
     }
 
     private renameFiles(names: Array<string>): Array<string>
