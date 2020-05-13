@@ -1,35 +1,36 @@
 import Discord = require('discord.js');
-import { Command } from './Command';
-import { EmojiReader } from '../../Readers';
-import { Printer } from '../../../ui/effects/Printer';
+import { Command } from '../Command';
+import { EmojiReader } from '../../dal/Readers';
+import { Printer } from '../../../console/Printer';
 
 export class VoteCommand extends Command
 {
     private collector: Discord.ReactionCollector;
     private votes: Map<Discord.User, string> = new Map();
     private emojis: Map<string, boolean> = new Map();
-    private voteValues: [number, string, Discord.Channel];
+    private voteValues: [number, string, Discord.Channel, Discord.Snowflake];
 
     public constructor(message: Discord.Message)
     {
         super("vote", message);
-        this.voteValues = this.getParams(this.parseMessage());
         let emojiReader = new EmojiReader();
         this.emojis.set(emojiReader.getEmoji("green_check"), true);
         this.emojis.set(emojiReader.getEmoji("green_cross"), true);
     }
 
-    public async execute(): Promise<Object> 
+    public async execute(): Promise<void> 
     {
+        this.voteValues = this.getParams(this.parseMessage());
         if (this.message.deletable)
             this.message.delete({ timeout: 100 });
         console.log(Printer.title("starting vote"));
-        console.log(Printer.args(["timeout", "vote reason", "vote channel id"], [`${this.voteValues[0]}`, this.voteValues[1], this.voteValues[2].id]))
+        console.log(Printer.args(
+            ["timeout", "vote reason", "vote channel id", "holding message (id)"],
+            [`${this.voteValues[0]}`, this.voteValues[1], this.voteValues[2]?.id, `${this.voteValues[3]}`]));
         if (this.voteValues[2] instanceof Discord.TextChannel)
         {
             this.buildCollector();
         }
-        else return "error";
     }
 
     private async buildCollector(): Promise<void>
@@ -38,7 +39,10 @@ export class VoteCommand extends Command
         let embed = new Discord.MessageEmbed();
         embed.setTitle(this.voteValues[1]);
         embed.addField("Temps de vote ", this.voteValues[0] + " secondes", true);
-        let voteMessage = await (this.voteValues[2] as Discord.TextChannel)?.send(embed);
+        let voteMessage: Discord.Message;
+        if (!this.voteValues[3])
+            voteMessage = await (this.voteValues[2] as Discord.TextChannel)?.send(embed);
+        else voteMessage = await this.message.channel.messages.fetch(this.voteValues[3]);
 
         this.collector = voteMessage.createReactionCollector(
             (reaction: Discord.MessageReaction, user: Discord.User) => !user.bot,
@@ -72,11 +76,12 @@ export class VoteCommand extends Command
             .catch(console.error);
     }
 
-    private getParams(map: Map<string, string>): [number, string, Discord.Channel]
+    private getParams(map: Map<string, string>): [number, string, Discord.Channel, Discord.Snowflake]
     {
         let timeout: number = 60;
         let reason: string = "Yes/No";
         let channel: Discord.Channel = this.message.channel;
+        let message: Discord.Snowflake;
         map.forEach((value, key) =>
         {
             switch (key)
@@ -94,10 +99,24 @@ export class VoteCommand extends Command
                     if (resolvedChannel && resolvedChannel instanceof Discord.TextChannel)
                         channel = resolvedChannel;
                     break;
+                case "m":
+                    try
+                    {
+                        let desconstructedSnowflake = Discord.SnowflakeUtil.deconstruct(value);
+                        if (desconstructedSnowflake)
+                        {
+                            message = value;
+                        }
+                    }
+                    catch (e)
+                    {
+                        message = undefined;
+                    }
+                    break;
                 default:
             }
         });
-        return [timeout, reason, channel]
+        return [timeout, reason, channel, message];
     }
 
     private buildEmbed(title: string, content: string = ""): Discord.MessageEmbed
@@ -105,7 +124,6 @@ export class VoteCommand extends Command
         let embed = new Discord.MessageEmbed()
             .setTitle(title)
             .setFooter("Vote requested by " + this.message.author.username);
-        //if ()
         return embed;
     }
 }

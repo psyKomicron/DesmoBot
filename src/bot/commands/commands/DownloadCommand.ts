@@ -1,9 +1,9 @@
 import Discord = require('discord.js');
-import { Command } from "./Command";
-import { Printer } from '../../../ui/effects/Printer';
+import { Command } from "../Command";
+import { Printer } from '../../../console/Printer';
 import { FileType } from '../../Bot';
-import { EmojiReader } from '../../Readers';
-import { ProgressBar } from '../../../ui/effects/ProgressBar';
+import { EmojiReader } from '../../dal/Readers';
+import { ProgressBar } from '../../../console/effects/ProgressBar';
 import { Downloader } from '../../../network/Downloader';
 
 export class DownloadCommand extends Command
@@ -17,10 +17,10 @@ export class DownloadCommand extends Command
         this.downloadValues = this.getParams(this.parseMessage());
     }
 
-    public async execute(): Promise<string> 
+    public async execute(): Promise<void> 
     {
         let limit = this.downloadValues[0];
-        if (limit < 0) return "error";
+        if (limit < 0) return Promise.reject(new Error("Given limit is not integer"));
         let type = this.downloadValues[1];
         let channel = this.downloadValues[2];
         let name = "";
@@ -43,7 +43,6 @@ export class DownloadCommand extends Command
                 this.message.react(this.emojiReader.getEmoji("green_check"));
                 if (this.message.deletable) this.message.delete({ timeout: 2000 });
             });
-        return "executed";
     }
 
     private async initiateDownload(numberOfFiles: number, channel: Discord.Channel): Promise<void>

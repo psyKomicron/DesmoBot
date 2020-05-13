@@ -1,5 +1,5 @@
 import Discord = require('discord.js');
-import { Command } from "./Command";
+import { Command } from "../Command";
 
 export class HelpCommand extends Command
 {
@@ -8,7 +8,7 @@ export class HelpCommand extends Command
         super("help", message);
     }
 
-    public async execute(): Promise<Object> 
+    public async execute(): Promise<void> 
     {
         let embed = new Discord.MessageEmbed()
             .setTitle("Help")
@@ -20,7 +20,6 @@ export class HelpCommand extends Command
         embed.addField("Delete - /delete", this.deleteHelp);
         embed.addField("Vote - /vote", this.voteHelp);
         this.message.channel.send(embed);
-        return "executed";
     }
 
     private get voteHelp(): string

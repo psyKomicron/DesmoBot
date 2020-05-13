@@ -1,11 +1,14 @@
 import Discord = require('discord.js');
-import { Command } from '../commands/Command';
+import { Command } from '../Command';
 import { DownloadCommand } from '../commands/DownloadCommand';
 import { DeleteCommand } from '../commands/DeleteCommand';
 import { HelpCommand } from '../commands/HelpCommand';
 import { VoteCommand } from '../commands/VoteCommand';
 import { EmbedCommand } from '../commands/EmbedCommand';
 import { DefaultCommand } from '../commands/DefaultCommand';
+import { TestCommand } from '../commands/TestCommand';
+import { ReplyCommand } from '../commands/ReplyCommand';
+import { Printer } from '../../../console/Printer';
 
 export class CommandFactory
 {
@@ -28,6 +31,12 @@ export class CommandFactory
                 break;
             case "embed":
                 command = new EmbedCommand(message);
+                break;
+            case "r":
+                command = new ReplyCommand(message);
+                break;
+            case "test":
+                command = new TestCommand(message);
                 break;
             default:
                 command = new DefaultCommand(message);

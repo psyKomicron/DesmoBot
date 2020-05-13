@@ -1,9 +1,9 @@
 import Discord = require('discord.js');
-import fs = require('fs');
-import { Command } from './Command';
+import { FileSystem as fs } from "../../dal/Readers";
+import { Command } from '../Command';
 import { Downloader } from '../../../network/Downloader';
-import { Printer } from '../../../ui/effects/Printer';
-import { JSONParser } from '../../../ui/discord/JSONParser';
+import { Printer } from '../../../console/Printer';
+import { JSONParser } from '../../dal/json/JSONParser';
 
 export class EmbedCommand extends Command
 {
@@ -17,7 +17,7 @@ export class EmbedCommand extends Command
             throw "Channel cannot be resolved";
     }
 
-    public async execute(): Promise<Object> 
+    public async execute(): Promise<void> 
     {
         // 1 -get & download file
         // 2 -check message & parse
@@ -40,7 +40,7 @@ export class EmbedCommand extends Command
 
             setTimeout(() =>
             {
-                let fileContent = fs.readFileSync(`${downloader.path}${jsonName}`).toString();
+                let fileContent = fs.readFile(`${downloader.path}${jsonName}`).toString();
                 try
                 {
                     let json = JSON.parse(fileContent);
@@ -57,7 +57,7 @@ export class EmbedCommand extends Command
                     };
                     if (parser.matchTemplate(json, template))
                     {
-                        Printer.clearPrint("Object has all required properties", [0, -1]);
+                        Printer.clearPrint("Object has all required properties", [0, -2]);
                         console.log();
                         let embed = json["embed"];
                         console.log(Printer.args(
@@ -101,26 +101,10 @@ export class EmbedCommand extends Command
                 finally
                 {
                     // removing the used json file
-                    fs.unlink(`${downloader.path}${jsonName}`, (err) =>
-                    {
-                        if (err) throw err;
-                        else
-                        {
-                            // removing the automaticaly generated log file
-                            fs.unlink(`${downloader.path}logs.txt`, (err) =>
-                            {
-                                if (err) throw err;
-                                else
-                                {
-                                    // removing the json & log file directory
-                                    fs.rmdir(`${downloader.path}`, (err) =>
-                                    {
-                                        if (err) throw err;
-                                    })
-                                }
-                            });
-                        }
-                    });
+                    fs.unlink(`${downloader.path}${jsonName}`);
+                    // removing the automaticaly generated log file
+                    fs.unlink(`${downloader.path}logs.txt`);
+                    fs.rmdir(`${downloader.path}`);
                 }
             }, 1000);
         }
@@ -135,7 +119,11 @@ export class EmbedCommand extends Command
         // 3 -delete original message with 1 sec delay
         if (this.message.deletable && this.embedValues[1])
             this.message.delete({ timeout: 100 });
-        return "running";
+    }
+
+    public buildEmbed(): Discord.MessageEmbed
+    {
+        return null;
     }
 
     private getParams(args: Map<string, string>): [Discord.TextChannel, boolean]

@@ -1,5 +1,5 @@
 import Discord = require('discord.js');
-import { Command } from './Command';
+import { Command } from '../Command';
 
 export class DefaultCommand extends Command
 {
@@ -8,9 +8,8 @@ export class DefaultCommand extends Command
         super("default", message);
     }
     
-    public async execute(): Promise<Object> 
+    public async execute(): Promise<void> 
     {
         this.message.reply("unknown command !");
-        return "executed";
     }
 }

@@ -1,9 +1,9 @@
 import Discord = require('discord.js');
 import readline = require('readline');
-import { Command } from "./Command";
+import { Command } from "../Command";
 import { clearTimeout } from 'timers';
-import { Printer } from '../../../ui/effects/Printer';
-import { ProgressBar } from '../../../ui/effects/ProgressBar';
+import { Printer } from '../../../console/Printer';
+import { ProgressBar } from '../../../console/effects/ProgressBar';
 
 export class DeleteCommand extends Command
 {
@@ -15,7 +15,7 @@ export class DeleteCommand extends Command
         this.delete_values = this.getParams(this.parseMessage());
     }
 
-    public async execute(): Promise<Object> 
+    public async execute(): Promise<void> 
     {
         console.log(Printer.title("deleting messages"));
         if (this.delete_values[1] != undefined && this.delete_values[2] == "")
@@ -55,8 +55,6 @@ export class DeleteCommand extends Command
             let channel = this.delete_values[1];
             this.overrideDelete(channel);
         }
-        else
-            return "error";
     }
 
     private async overrideDelete(channel: Discord.TextChannel): Promise<string>
