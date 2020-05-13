@@ -1,12 +1,12 @@
 // necessary imports
 import { Bot } from "./src/bot/Bot";
-import { Printer } from "./src/ui/effects/Printer";
-import { StarEffect } from "./src/ui/effects/StarEffect";
+import { Printer } from "./src/console/Printer";
+import { StarEffect } from "./src/console/effects/StarEffect";
 // end necessary imports
-import { WebServer } from "./src/ui/web/WebServer";
+import { WebServer } from "./src/network/web/WebServer";
 
 // ------- Tests --------
-//new WebServer().startService();
+// new WebServer().startService();
 // -------- Code --------
 Printer.startUp();
 let loadingEffect = new StarEffect("", [-17, -1]);
