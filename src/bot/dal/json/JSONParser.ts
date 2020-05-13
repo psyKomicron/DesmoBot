@@ -1,4 +1,4 @@
-import { Printer } from "../effects/Printer";
+import { Printer } from "../../../console/Printer";
 
 export class JSONParser
 {
@@ -14,7 +14,7 @@ export class JSONParser
                 if (!jsonRoot[properties[i]])
                 {
                     hasAll = false;
-                    console.log("Object doesn't have property " + Printer.error(properties[i]));
+                    console.error("Object doesn't have property " + Printer.error(properties[i]));
                     break;
                 }
                 else hasAll = true;

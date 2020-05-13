@@ -1,7 +1,7 @@
 import fs = require('fs');
 import express = require('express');
 import http = require('http');
-import { Printer } from '../effects/Printer';
+import { Printer } from '../../console/Printer';
 
 export class WebServer
 {
@@ -50,7 +50,8 @@ class HTMLReader
 {
     public get get(): string
     {
-        return this.createPage(this.searchImages());
+        //return this.createPage(this.searchImages());
+        return fs.readFileSync("./website/index.html").toLocaleString();
     }
 
     private createPage(imagesPaths: Array<string>): string

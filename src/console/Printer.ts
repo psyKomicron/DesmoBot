@@ -1,4 +1,5 @@
 import readline = require('readline');
+import { Command } from '../bot/commands/Command';
 
 export class Printer
 {
@@ -13,7 +14,7 @@ export class Printer
     private static appTitle(): string
     {
         let str = Printer.error("-------------------------------------\n");
-        str += `${Printer.error(">>>>>")} Desmo Bot with TypeScript ${Printer.error("<<<<<")}\n`; // 59
+        str += `${Printer.error(">>>>>")} Desmo Bot with TypeScript ${Printer.error("<<<<<")}\n`;
         str += `${Printer.error(">>>>>")}                           ${Printer.error("<<<<<")}
 ${Printer.error("-------------------------------------")}`;
         return str;
@@ -38,6 +39,11 @@ ${Printer.error("-------------------------------------")}`;
      */
     public static title(content: string | number)
     {
+        if (Command.Commands > 10)
+        {
+            this.printEscCode(EscapeCodes.CLEAR_SCREEN);
+            readline.cursorTo(process.stdout, 0, 0);
+        }
         let tac: string = "";
         let max = 15 - (content.toString().length / 2);
         for (let i = 0; i < max; i++) tac += "-";
@@ -72,7 +78,7 @@ ${Printer.error("-------------------------------------")}`;
         }
         else
         {
-            console.log(Printer.error("contents & values not the same size !"));
+            console.error(Printer.error("contents & values not the same size !"));
             return "";
         }
     }

@@ -1,5 +1,5 @@
 import readline = require('readline');
-import { Printer } from './Printer';
+import { Printer } from '../Printer';
 
 export class ProgressBar
 {
