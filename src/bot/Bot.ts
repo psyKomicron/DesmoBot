@@ -1,16 +1,17 @@
 import fs = require('fs');
 import Discord = require('discord.js');
 import readline = require('readline');
-import { TokenReader } from './Readers';
+import { TokenReader } from './dal/Readers';
 import { CommandFactory } from './commands/factory/CommandFactory';
 import { clearInterval } from 'timers';
-import { Printer } from '../ui/effects/Printer';
+import { Printer } from '../console/Printer';
 
 export class Bot 
 {
     // own
     private prefix: string = "/";
     private readonly parents = ["psyKomicron#6527", "desmoclublyon#3056", "marquez#5719"];
+    private readonly verbose: boolean = true;
     // discord
     private readonly client: Discord.Client = new Discord.Client();
 
@@ -55,16 +56,21 @@ export class Bot
                 name += content[substr];
                 substr++;
             }
-            let command = CommandFactory.create(name.substr(1), message);
-            command.execute()
-                .then(response =>
+            try
+            {
+                let command = CommandFactory.create(name.substr(1), message);
+                command.execute()
+                    .catch(console.error);
+            } catch (error)
+            {
+                if (error instanceof Error)
                 {
-                    if (response == "error")
-                    {
-                        console.error(
-                            `error occured {\n[-] command name  : ${command.Name}\n[-] command values : ${command.Values.toString}`);
-                    }
-                });
+                    console.error(Printer.error(error.message));
+                    if (this.verbose)
+                        message.author.send(`It seems you have send a message with a content that I did not understand (most likely it contained spaces). Try again putting "" around arguments values.
+Such as \`${this.prefix}chef -message "Bork! Bork! Bork!"\``);
+                }
+            }
         }
     }
 
