@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
     "module": "commonjs",
+    "removeComments": true,
     "target": "es6",
-    "lib": ["es6"],
+    "lib": [ "es6" ],
     "sourceMap": true
   },
   "exclude": [
