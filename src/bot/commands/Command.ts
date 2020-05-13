@@ -1,12 +1,13 @@
-import fs = require('fs');
+import { FileSystem as fs } from "../dal/Readers";
 import Discord = require('discord.js');
+import { Printer } from "../../console/Printer";
 
 export abstract class Command
 {
     private static _commands: number = 0;
     private name: string;
     private _message: Discord.Message;
-    private values: Map<string, string>;
+    private arguments: Map<string, string>;
 
     protected constructor(name: string, message: Discord.Message)
     {
@@ -15,7 +16,7 @@ export abstract class Command
         this._message = message;
     }
 
-    public abstract async execute(): Promise<Object>;
+    public abstract async execute(): Promise<void>;
 
     public static get Commands(): number
     {
@@ -25,15 +26,6 @@ export abstract class Command
     public get Name(): string
     {
         return this.name;
-    }
-
-    public get Values(): Map<string, string>
-    {
-        return this.values;
-    }
-    public set Values(values: Map<string, string>)
-    {
-        this.values = values;
     }
 
     protected get message(): Discord.Message
@@ -49,47 +41,54 @@ export abstract class Command
         let substr = 0;
         while (substr < rawContent.length && rawContent[substr] != "-") { substr++; }
         let content = rawContent.substring(substr);
+        // check if commas are even
+        let commas = 0;
+        for (var j = 0; j < rawContent.length; j++)
+            if (rawContent[j] == "\"") commas++;
+        if (commas % 2 != 0)
+            throw new Error(`Command contains a space, but not incapsulated in \" \" (at character ${j + 1})`);
         let map = new Map<string, string>();
-        for (let i = 0; i < content.length; i++)
+        let i = 0;
+        while (i < content.length)
         {
-            if (content[i] == "-")
-            {
-                if (i + 1 != content.length)
+            if (content[i] == "-") {
+                if (i + 1 != content.length) 
                 {
-                    let key = content[i + 1];
-                    let value = "";
-                    let j = i + 3;
-                    if (content[j] == "\"")
+                    let key: string = "";
+                    for (i += 1; i < content.length; i++) 
                     {
-                        j++;
-                        let quote = false;
-                        while (j < content.length && !quote)
+                        if (content[i] != " ")
+                            key += content[i];
+                        else 
                         {
-                            if (content[j] != "\"")
-                            {
-                                value += content[j];
-                            }
-                            else quote = true;
-                            j++;
+                            i++;
+                            break;
                         }
-                        i = j;
                     }
-                    else
+                    let comma = false;
+                    if (content[i] == "\"")
                     {
-                        let tac = false;
-                        while (j < content.length && !tac)
-                        {
-                            if (content[j] != '-' && content[j] != " ")
-                                value += content[j];
-                            else tac = true;
-                            j++;
-                        }
+                        i++;
+                        comma = true;
+                    }
+                    let value = "";
+                    let marker = true;
+                    while (i < content.length && marker) {
+                        if ((content.charCodeAt(i) > 47 && content.charCodeAt(i) < 58) ||
+                            (content.charCodeAt(i) > 64 && content.charCodeAt(i) < 91) ||
+                            (content.charCodeAt(i) > 96 && content.charCodeAt(i) < 123))
+                            value += content[i];
+                        else if (content[i] != "\"" && comma)
+                            value += content[i];
+                        else marker = false;
+                        if (marker) i++;
                     }
                     map.set(key, value);
                 }
             }
+            else i++;
         }
-        this.values = map;
+        this.arguments = map;
         this.writeLogs(map, this._message);
         return map;
     }
@@ -108,13 +107,13 @@ export abstract class Command
     private writeLogs(map: Map<string, string>, message: Discord.Message)
     {
         let filepath = "./files/logs";
-        fs.mkdir(filepath, { recursive: true }, (err) => { if (err) throw err; });
-        if (!fs.existsSync("./files/logs/command_logs.json"))           
+        fs.mkdir(filepath, true);
+        if (!fs.exists("./files/logs/command_logs.json"))
         {
             let root = [];
-            fs.writeFileSync(filepath + "/command_logs.json", JSON.stringify(root));
+            fs.writeFile(filepath + "/command_logs.json", JSON.stringify(root));
         }
-        var logs = JSON.parse(fs.readFileSync(filepath + "/command_logs.json").toString());
+        var logs = JSON.parse(fs.readFile(filepath + "/command_logs.json").toString());
         let now = new Date(Date.now());
         let data = {};
         map.forEach((value, key) =>
@@ -147,6 +146,6 @@ export abstract class Command
             ]
         }
         logs.push(json);
-        fs.writeFileSync(filepath + "/command_logs.json", JSON.stringify(logs));
+        fs.writeFile(filepath + "/command_logs.json", JSON.stringify(logs));
     }
 }
