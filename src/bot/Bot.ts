@@ -6,6 +6,7 @@ import { CommandFactory } from './commands/factory/CommandFactory';
 import { clearInterval } from 'timers';
 import { Printer } from '../console/Printer';
 import { VoteLogger } from './commands/commands/vote/VoteLogger';
+import { CustomException } from './exceptions/CustomException';
 
 export class Bot 
 {
@@ -47,9 +48,9 @@ export class Bot
     private onMessage(message: Discord.Message): void 
     {
         let content = message.content;
-        if (content.startsWith(this.prefix) && this.parents.includes(this.parseAuthor(message.author)))
+        if (content.startsWith(this.prefix) && this.parents.includes(message.author.tag))
         {
-            console.log("\ncommand requested by : " + Printer.info(this.parseAuthor(message.author)));
+            console.log("\ncommand requested by : " + Printer.info(message.author.tag));
             let substr = 0;
             let name = "";
             while (substr < content.length && content[substr] != "-" && content[substr] != " ")
@@ -65,10 +66,9 @@ export class Bot
                     {
                         let index = content.split(" ")[1];
                         if (!Number.isNaN(Number.parseInt(index)))
-                        {
                             VoteLogger.end(Number.parseInt(index));
-                        }
-                        if (message.deletable) message.delete();
+                        if (message.deletable)
+                            message.delete();
                     }
                     catch (error) { }
                 }
@@ -76,29 +76,42 @@ export class Bot
                 {
                     let command = CommandFactory.create(name.substr(1), message, this);
                     command.execute()
-                        .catch(console.error);
+                        .catch(error =>
+                        {
+                            if (error instanceof CustomException)
+                            {
+                                console.error(Printer.error(`${error.name} failed : ${error.message}`));
+                                if (this.verbose)
+                                {
+                                    message.author.send(`Command (\`${error.name}\`) failed. Message : \n${error.message}`);
+                                }
+                            }
+                            else if (this.verbose)
+                            {
+                                console.error(error);
+                                message.author.send(
+`It seems you have send a message with a content that I did not understand (most likely it contained spaces). Try again putting "" around arguments values.
+Such as \`${this.prefix}chef -message "Bork! Bork! Bork!"\``);
+                            }
+                        });
                 }
             } catch (error)
             {
-                if (error instanceof Error)
+                if (error instanceof CustomException)
                 {
-                    console.error(Printer.error(error.message));
                     if (this.verbose)
-                        message.author.send(`It seems you have send a message with a content that I did not understand (most likely it contained spaces). Try again putting "" around arguments values.
+                    {
+                        console.error(Printer.error(error.name));
+                        message.author.send(error.message);
+                    }
+                }
+                else if (this.verbose)
+                {
+                    message.author.send(`It seems you have send a message with a content that I did not understand (most likely it contained spaces). Try again putting "" around arguments values.
 Such as \`${this.prefix}chef -message "Bork! Bork! Bork!"\``);
                 }
             }
         }
-    }
-
-    /**
-     * Translate a Discord.User object into a string. Concatenate the username & discrimanator with a #
-     * in between.
-     * @param author Discord.User to translate
-     */
-    private parseAuthor(author: Discord.User): string
-    {
-        return author.username + "#" + author.discriminator;
     }
 }
 
