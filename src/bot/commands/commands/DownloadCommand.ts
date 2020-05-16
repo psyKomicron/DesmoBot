@@ -1,19 +1,18 @@
 import Discord = require('discord.js');
 import { Command } from "../Command";
 import { Printer } from '../../../console/Printer';
-import { FileType } from '../../Bot';
+import { FileType, Bot } from '../../Bot';
 import { EmojiReader } from '../../dal/Readers';
 import { ProgressBar } from '../../../console/effects/ProgressBar';
 import { Downloader } from '../../../network/Downloader';
 
 export class DownloadCommand extends Command
 {
-    private emojiReader: EmojiReader = new EmojiReader();
     private downloadValues: [number, FileType, Discord.Channel, number];
 
-    public constructor(message: Discord.Message)
+    public constructor(message: Discord.Message, bot: Bot)
     {
-        super("download", message);
+        super("download", message, bot);
         this.downloadValues = this.getParams(this.parseMessage());
     }
 
@@ -26,7 +25,7 @@ export class DownloadCommand extends Command
         let name = "";
         if (channel instanceof Discord.TextChannel)
             name = channel.name;
-        this.message.react(this.emojiReader.getEmoji("thinking"));
+        this.message.react(EmojiReader.getEmoji("thinking"));
         console.log(Printer.title("initiating download"));
         console.log(Printer.args(
             ["downloading", "file type", "channel"],
@@ -35,12 +34,12 @@ export class DownloadCommand extends Command
         if (limit > 250)
         {
             console.log(Printer.warn("\n\t/!\\ WARNING : downloading over 250 files can fail /!\\ \n"));
-            this.message.react(this.emojiReader.getEmoji("warning"));
+            this.message.react(EmojiReader.getEmoji("warning"));
         }
         this.initiateDownload(limit, channel)
             .then(() =>
             {
-                this.message.react(this.emojiReader.getEmoji("green_check"));
+                this.message.react(EmojiReader.getEmoji("green_check"));
                 if (this.message.deletable) this.message.delete({ timeout: 2000 });
             });
     }
