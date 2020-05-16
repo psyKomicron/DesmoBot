@@ -1,6 +1,6 @@
 # DesmoBot
 ## About (long)
-DesmoBot Discord bot, written in TypeScript. It is using the discord.js API.
+Julie is a Discord bot, written in TypeScript. It is using the discord.js API.
 
 ## Functionalities
 ### Vote
