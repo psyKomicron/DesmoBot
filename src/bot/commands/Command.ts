@@ -14,6 +14,7 @@ export abstract class Command
         Command._commands++;
         this.name = name;
         this._message = message;
+        this._bot = bot;
     }
 
     public abstract async execute(): Promise<void>;
