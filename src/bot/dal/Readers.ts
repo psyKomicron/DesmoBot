@@ -18,7 +18,7 @@ export class TokenReader
 
 export class EmojiReader
 {
-    public getEmoji(name: string): string
+    public static getEmoji(name: string): string
     {
         let res = undefined;
         try
