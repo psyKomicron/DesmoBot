@@ -5,6 +5,7 @@ import { TokenReader } from './dal/Readers';
 import { CommandFactory } from './commands/factory/CommandFactory';
 import { clearInterval } from 'timers';
 import { Printer } from '../console/Printer';
+import { VoteLogger } from './commands/commands/vote/VoteLogger';
 
 export class Bot 
 {
@@ -13,16 +14,16 @@ export class Bot
     private readonly parents = ["psyKomicron#6527", "desmoclublyon#3056", "marquez#5719"];
     private readonly verbose: boolean = true;
     // discord
-    private readonly client: Discord.Client = new Discord.Client();
+    private readonly _client: Discord.Client = new Discord.Client();
 
     public constructor(id: NodeJS.Timeout) 
     {
         this.init(id);
     }
 
-    public get Client(): Discord.Client
+    public get client(): Discord.Client
     {
-        return this.client;
+        return this._client;
     }
 
     private init(id: NodeJS.Timeout): void
@@ -33,14 +34,14 @@ export class Bot
             if (!fs.existsSync(directories[i]))
                 fs.mkdir(directories[i], () => { });
         // initiate bot
-        this.client.on("ready", () =>
+        this._client.on("ready", () =>
         {
             clearInterval(id);
             readline.moveCursor(process.stdout, -4, 0);
             process.stdout.write(`READY\n${Printer.error("-------------------------------------")}\n`);
         });
-        this.client.on("message", (message) => { this.onMessage(message); });
-        this.client.login(TokenReader.getToken());
+        this._client.on("message", (message) => { this.onMessage(message); });
+        this._client.login(TokenReader.getToken());
     }
 
     private onMessage(message: Discord.Message): void 
@@ -58,9 +59,25 @@ export class Bot
             }
             try
             {
-                let command = CommandFactory.create(name.substr(1), message);
-                command.execute()
-                    .catch(console.error);
+                if (name.substr(1) == "end")
+                {
+                    try
+                    {
+                        let index = content.split(" ")[1];
+                        if (!Number.isNaN(Number.parseInt(index)))
+                        {
+                            VoteLogger.end(Number.parseInt(index));
+                        }
+                        if (message.deletable) message.delete();
+                    }
+                    catch (error) { }
+                }
+                else
+                {
+                    let command = CommandFactory.create(name.substr(1), message, this);
+                    command.execute()
+                        .catch(console.error);
+                }
             } catch (error)
             {
                 if (error instanceof Error)
