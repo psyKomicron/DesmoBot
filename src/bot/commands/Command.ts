@@ -1,15 +1,15 @@
 import { FileSystem as fs } from "../dal/Readers";
 import Discord = require('discord.js');
-import { Printer } from "../../console/Printer";
+import { Bot } from "../Bot";
 
 export abstract class Command
 {
     private static _commands: number = 0;
+    private readonly _bot: Bot;
     private name: string;
     private _message: Discord.Message;
-    private arguments: Map<string, string>;
 
-    protected constructor(name: string, message: Discord.Message)
+    protected constructor(name: string, message: Discord.Message, bot: Bot)
     {
         Command._commands++;
         this.name = name;
@@ -18,20 +18,13 @@ export abstract class Command
 
     public abstract async execute(): Promise<void>;
 
-    public static get Commands(): number
-    {
-        return this._commands;
-    }
+    public static get Commands(): number { return this._commands; }
 
-    public get Name(): string
-    {
-        return this.name;
-    }
+    public get Name(): string { return this.name; }
 
-    protected get message(): Discord.Message
-    {
-        return this._message;
-    }
+    protected get message(): Discord.Message { return this._message; }
+
+    protected get bot(): Bot { return this._bot; }
 
     protected parseMessage(): Map<string, string>
     {
@@ -88,7 +81,6 @@ export abstract class Command
             }
             else i++;
         }
-        this.arguments = map;
         this.writeLogs(map, this._message);
         return map;
     }
