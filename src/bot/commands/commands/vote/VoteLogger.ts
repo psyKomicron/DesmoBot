@@ -1,4 +1,4 @@
-import { VoteCommand } from "./VoteCommand";
+import { VoteCommand } from "../VoteCommand";
 
 export class VoteLogger
 {
