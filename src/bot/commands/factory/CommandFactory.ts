@@ -3,7 +3,7 @@ import { Command } from '../Command';
 import { DownloadCommand } from '../commands/DownloadCommand';
 import { DeleteCommand } from '../commands/DeleteCommand';
 import { HelpCommand } from '../commands/HelpCommand';
-import { VoteCommand } from '../commands/vote/VoteCommand';
+import { VoteCommand } from '../commands/VoteCommand';
 import { EmbedCommand } from '../commands/EmbedCommand';
 import { DefaultCommand } from '../commands/DefaultCommand';
 import { TestCommand } from '../commands/TestCommand';
