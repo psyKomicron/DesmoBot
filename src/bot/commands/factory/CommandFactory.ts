@@ -3,43 +3,43 @@ import { Command } from '../Command';
 import { DownloadCommand } from '../commands/DownloadCommand';
 import { DeleteCommand } from '../commands/DeleteCommand';
 import { HelpCommand } from '../commands/HelpCommand';
-import { VoteCommand } from '../commands/VoteCommand';
+import { VoteCommand } from '../commands/vote/VoteCommand';
 import { EmbedCommand } from '../commands/EmbedCommand';
 import { DefaultCommand } from '../commands/DefaultCommand';
 import { TestCommand } from '../commands/TestCommand';
 import { ReplyCommand } from '../commands/ReplyCommand';
-import { Printer } from '../../../console/Printer';
+import { Bot } from '../../Bot';
 
 export class CommandFactory
 {
-    public static create(type: string, message: Discord.Message): Command
+    public static create(type: string, message: Discord.Message, bot: Bot): Command
     {
         let command: Command = undefined;
         switch (type)
         {
             case "download":
-                command = new DownloadCommand(message);
+                command = new DownloadCommand(message, bot);
                 break;
             case "delete":
-                command = new DeleteCommand(message);
+                command = new DeleteCommand(message, bot);
                 break;
             case "help":
-                command = new HelpCommand(message);
+                command = new HelpCommand(message, bot);
                 break;
             case "vote":
-                command = new VoteCommand(message);
+                command = new VoteCommand(message, bot);
                 break;
             case "embed":
-                command = new EmbedCommand(message);
+                command = new EmbedCommand(message, bot);
                 break;
             case "r":
-                command = new ReplyCommand(message);
+                command = new ReplyCommand(message, bot);
                 break;
             case "test":
-                command = new TestCommand(message);
+                command = new TestCommand(message, bot);
                 break;
             default:
-                command = new DefaultCommand(message);
+                command = new DefaultCommand(message, bot);
                 break;
         }
         return command;
