@@ -1,6 +1,6 @@
 # DesmoBot
 ## About (long)
-DesmoBot Discord bot, written in TypeScript. Obviously it is using the discord.js API.
+DesmoBot Discord bot, written in TypeScript. It is using the discord.js API.
 
 ## Functionalities
 ### Vote
