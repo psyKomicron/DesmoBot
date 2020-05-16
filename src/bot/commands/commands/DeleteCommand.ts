@@ -4,14 +4,15 @@ import { Command } from "../Command";
 import { clearTimeout } from 'timers';
 import { Printer } from '../../../console/Printer';
 import { ProgressBar } from '../../../console/effects/ProgressBar';
+import { Bot } from '../../Bot';
 
 export class DeleteCommand extends Command
 {
     private delete_values: [number, Discord.TextChannel, string];
 
-    public constructor(message: Discord.Message)
+    public constructor(message: Discord.Message, bot: Bot)
     {
-        super("delete", message);
+        super("delete", message, bot);
         this.delete_values = this.getParams(this.parseMessage());
     }
 

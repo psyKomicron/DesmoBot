@@ -1,14 +1,15 @@
 import Discord = require('discord.js');
 import { Command } from "../Command";
 import { Printer } from '../../../console/Printer';
+import { Bot } from '../../Bot';
 
 export class ReplyCommand extends Command
 {
     private values: [string, Discord.Snowflake];
 
-    public constructor(message: Discord.Message)
+    public constructor(message: Discord.Message, bot: Bot)
     {
-        super("reply command", message);
+        super("reply command", message, bot);
         let content = message.content;
         let tac = false;
         for (var i = 0; i < content.length && !tac; i++)
@@ -50,12 +51,7 @@ export class ReplyCommand extends Command
         let lastMessageID = lastMessage.id;
         if (lastMessage.author.tag == this.message.author.tag)
         {
-
-        }
-        else
-        {
-            let messages = await this.message.channel.messages.fetch({ limit: 10 });
-
+            lastMessage = undefined;
         }
         this.values = [content, lastMessageID];
     }

@@ -4,14 +4,15 @@ import { Command } from '../Command';
 import { Downloader } from '../../../network/Downloader';
 import { Printer } from '../../../console/Printer';
 import { JSONParser } from '../../dal/json/JSONParser';
+import { Bot } from '../../Bot';
 
 export class EmbedCommand extends Command
 {
     private embedValues: [Discord.TextChannel, boolean]
 
-    public constructor(message: Discord.Message)
+    public constructor(message: Discord.Message, bot: Bot)
     {
-        super("embed builder", message);
+        super("embed builder", message, bot);
         this.embedValues = this.getParams(this.parseMessage());
         if (this.embedValues[0] == undefined)
             throw "Channel cannot be resolved";
