@@ -14,12 +14,11 @@ export class HelpCommand extends Command
         let embed = new Discord.MessageEmbed()
             .setTitle("Help")
             .setColor(0xff0000)
-            .setDescription("Help page for Julie");
-        embed.addField("Intro", "For commands examples, **DO NOT INCLUDE \"[]\"** when typing the commands\n" +
-            "Please provide command arguments in the order given by the command help");
-        embed.addField("Download - /download", this.downloadHelp);
-        embed.addField("Delete - /delete", this.deleteHelp);
-        embed.addField("Vote - /vote", this.voteHelp);
+            .setDescription("Help page for Julie")
+            .setURL("https://github.com/psyKomicron/Julie/blob/master/README.md")
+            .addFields(
+                { name: "Link", value: "https://github.com/psyKomicron/Julie/blob/master/README.md" }
+            );
         this.message.channel.send(embed);
     }
 
