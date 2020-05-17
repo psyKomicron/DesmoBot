@@ -58,9 +58,9 @@ export class FileSystem
         return fs.existsSync(path);
     }
 
-    public static mkdir(path: string, recursive = false)
+    public static mkdir(path: string, recursive = false): string
     {
-        fs.mkdirSync(path, { recursive: recursive });
+        return fs.mkdirSync(path, { recursive: recursive });
     }
 
     public static rmdir(path: string): void
@@ -71,5 +71,10 @@ export class FileSystem
     public static unlink(path: string): void
     {
         fs.unlinkSync(path);
+    }
+
+    public static getStats(path: string): fs.Stats
+    {
+        return fs.statSync(path);
     }
 }
