@@ -48,7 +48,7 @@ export class DownloadCommand extends Command
     {
         let lastMessageID: Discord.Snowflake = null;
 
-        let limit = numberOfFiles > 50 ? 100 : 50;
+        let limit = numberOfFiles > 100 ? 100 : numberOfFiles;
         let totalDownloads: number = 0;
         if (channel instanceof Discord.TextChannel)
         {
@@ -60,8 +60,15 @@ export class DownloadCommand extends Command
                 let bar = new ProgressBar(numberOfFiles, "fetching urls");
                 bar.start();
                 // fetching all requested urls
+                let reps = 1;
                 while (urls.length < numberOfFiles) 
                 {
+                    // change limit
+                    if (reps % 5 == 0 && limit < 100)
+                    {
+                        reps = 1;
+                        limit = Math.floor(limit + (limit * 0.5));
+                    }
                     lastMessageID = await messages.last()?.id;
                     if (lastMessageID == undefined)
                     {
@@ -75,6 +82,7 @@ export class DownloadCommand extends Command
                         newUrls.forEach(v => urls.push(v));
                         bar.update(urls.length);
                     }
+                    reps++;
                 }
             }
             let copyArray: Array<string> = new Array();
@@ -196,6 +204,8 @@ export class DownloadCommand extends Command
             Downloader.getFileName(content).endsWith(".jpg") ||
             Downloader.getFileName(content).endsWith(".JPG") ||
             Downloader.getFileName(content).endsWith(".gif") ||
+            Downloader.getFileName(content).endsWith(".bmp") ||
+            Downloader.getFileName(content).endsWith(".BMP") ||
             Downloader.getFileName(content).endsWith(".GIF"));
     }
 
@@ -220,7 +230,7 @@ export class DownloadCommand extends Command
             case "file":
                 type = FileType.FILE;
                 break;
-            case "vid":
+            case "video":
             case "v":
                 type = FileType.VIDEO;
                 break;
