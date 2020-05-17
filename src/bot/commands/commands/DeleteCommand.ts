@@ -22,8 +22,8 @@ export class DeleteCommand extends Command
         if (this.delete_values[1] != undefined && this.delete_values[2] == "")
         {
             console.log(Printer.args(
-                ["number of messages", "channel name", "method", "target user"],
-                [`${this.delete_values[0]}`, `${this.delete_values[1].name}`, "bulk delete", `${this.delete_values[2]}`]));
+                ["number of messages", "channel name", "target user"],
+                [`${this.delete_values[0]}`, `${this.delete_values[1].name}`, `${this.delete_values[2]}`]));
             let channel = this.delete_values[1];
             channel.bulkDelete(this.delete_values[0])
                 .then(response =>
@@ -37,13 +37,8 @@ export class DeleteCommand extends Command
                         i++;
                     });
                 })
-                .catch(error =>
+                .catch(() =>
                 {
-                    readline.moveCursor(process.stdout, 0, -1);
-                    readline.clearLine(process.stdout, 0);
-                    console.log(Printer.args(["method            "], ["fetch delete"]));
-                    console.log("while deleting messages : " + Printer.warn(error));
-                    console.log("switching delete method to manual...");
                     this.overrideDelete(channel)
                         .catch(console.error);
                 });
@@ -58,7 +53,7 @@ export class DeleteCommand extends Command
         }
     }
 
-    private async overrideDelete(channel: Discord.TextChannel): Promise<string>
+    private async overrideDelete(channel: Discord.TextChannel): Promise<void>
     {
         let messages: Discord.Collection<string, Discord.Message> = await channel.messages.fetch();
         if (this.delete_values[2] != "")
@@ -95,20 +90,21 @@ export class DeleteCommand extends Command
         }
         let bar = new ProgressBar(this.delete_values[0], "deleting messages");
         bar.start();
-        for (let i = 0; i < messages.size && i < this.delete_values[0]; i++)
+        let alive = true;
+        for (let i = 0; i < messages.size && i < this.delete_values[0] && alive; i++)
         {
             let timeout = setTimeout(() =>
             {
+                alive = false;
                 readline.moveCursor(process.stdout, 64, -2);
-                console.log(Printer.warn("deleting messages slower than planned"));
+                console.log(Printer.warn("deleting messages slower than planned, stopping"));
                 readline.moveCursor(process.stdout, 0, 1);
             }, 10000);
-            if (messagesToDelete[i].deletable) await messagesToDelete[i].delete({ timeout: 1 });
+            if (messagesToDelete[i].deletable) await messagesToDelete[i].delete({ timeout: 100 });
             bar.update(i + 1);
             clearTimeout(timeout);
         }
         console.log("");
-        return "executed";
     }
 
     private getParams(map: Map<string, string>): [number, Discord.TextChannel, string]
@@ -117,7 +113,6 @@ export class DeleteCommand extends Command
         let channel: Discord.TextChannel = undefined;
         let username = "";
         if (this.message.channel instanceof Discord.TextChannel) channel = this.message.channel;
-
         map.forEach((value, key) =>
         {
             switch (key)
@@ -147,17 +142,5 @@ export class DeleteCommand extends Command
             }
         });
         return [messages, channel, username];
-    }
-
-    private crop(message: Discord.Message): string
-    {
-        let res: string;
-        if (message.content.length > 10)
-        {
-            res = message.content.substr(0, 10);
-            res += "[...]";
-        }
-        else res = message.content;
-        return res;
     }
 }
