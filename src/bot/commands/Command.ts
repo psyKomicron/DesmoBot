@@ -99,14 +99,15 @@ export abstract class Command
 
     private writeLogs(map: Map<string, string>, message: Discord.Message)
     {
-        let filepath = "./files/logs";
+        const filepath = "./files/logs/";
+        const name = "command_logs";
         fs.mkdir(filepath, true);
-        if (!fs.exists("./files/logs/command_logs.json"))
+        if (!fs.exists(filepath + name + ".json"))
         {
             let root = [];
-            fs.writeFile(filepath + "/command_logs.json", JSON.stringify(root));
+            fs.writeFile(filepath + name + ".json", JSON.stringify(root));
         }
-        var logs = JSON.parse(fs.readFile(filepath + "/command_logs.json").toString());
+        var logs = JSON.parse(fs.readFile(filepath + name + ".json").toString());
         let now = new Date(Date.now());
         let data = {};
         map.forEach((value, key) =>
@@ -138,7 +139,16 @@ export abstract class Command
                 }
             ]
         }
-        logs.push(json);
-        fs.writeFile(filepath + "/command_logs.json", JSON.stringify(logs));
+        if (fs.getStats(filepath + name + ".json").size > 19000)
+        {
+            let index = 1;
+            while (fs.exists(`${filepath}${name}(${index})`)) index++;
+            fs.writeFile(`${filepath}${name}(${index}).json`, JSON.stringify(json));
+        }
+        else
+        {
+            logs.push(json);
+            fs.writeFile(filepath + name + ".json", JSON.stringify(logs));
+        }
     }
 }
