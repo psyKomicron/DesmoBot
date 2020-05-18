@@ -36,7 +36,7 @@ export class EmbedCommand extends Command
                 [`${jsonName}`, `${fileUrl}`, `${this.embedValues[1]}`, `${this.embedValues[0].name}`]
             ));
 
-            let downloader = new Downloader(this.Name);
+            let downloader = new Downloader(this.name);
             await downloader.download([fileUrl]);
 
             setTimeout(() =>
