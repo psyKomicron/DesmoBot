@@ -60,7 +60,7 @@ export class DeleteCommand extends Command
         {
             messages = messages.filter((message) =>
             {
-                let username = `${message.author.username.replace(" ", "")}#${message.author.discriminator}`;
+                let username = message.author.tag;
                 return username == this.delete_values[2];
             });
         }
@@ -118,7 +118,8 @@ export class DeleteCommand extends Command
             switch (key)
             {
                 case "u":
-                    if (/([A-Za-z]+#+[0-9999])\w+/.exec(value)[0] == value)
+                    let res = /([A-Za-z0-9]+#+[0-9999])\w+/.exec(value);
+                    if (res && res[0] == value)
                     {
                         username = value;
                     }
@@ -132,8 +133,8 @@ export class DeleteCommand extends Command
                     }
                     break;
                 case "c":
-                    let resolvedChannel = this.message.guild.channels.resolve(value);
-                    if (resolvedChannel && resolvedChannel instanceof Discord.TextChannel)
+                    let resolvedChannel = this.resolveChannel(value);
+                    if (resolvedChannel)
                     {
                         channel = resolvedChannel;
                     }
