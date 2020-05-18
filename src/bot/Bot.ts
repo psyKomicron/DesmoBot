@@ -107,6 +107,7 @@ Such as \`${this.prefix}chef -message "Bork! Bork! Bork!"\``);
                 }
                 else if (this.verbose)
                 {
+                    console.error(error);
                     message.author.send(`It seems you have send a message with a content that I did not understand (most likely it contained spaces). Try again putting "" around arguments values.
 Such as \`${this.prefix}chef -message "Bork! Bork! Bork!"\``);
                 }
