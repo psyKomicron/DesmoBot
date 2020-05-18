@@ -39,7 +39,7 @@ ${Printer.error("-------------------------------------")}`;
      */
     public static title(content: string | number)
     {
-        if (Command.Commands > 10)
+        if (Command.commands > 10)
         {
             this.printEscCode(EscapeCodes.CLEAR_SCREEN);
             readline.cursorTo(process.stdout, 0, 0);
