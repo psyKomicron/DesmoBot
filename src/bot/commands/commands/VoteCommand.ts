@@ -16,7 +16,7 @@ export class VoteCommand extends Command
     private reactions: Map<Discord.MessageReaction, Array<Discord.User>> = new Map();
     // values
     private timeout: number;
-    private title: string;
+    private _title: string;
     private channel: Discord.Channel;
     private hostMessageID: Discord.Snowflake;
     private emojis: Array<Discord.Emoji> = new Array();
@@ -26,6 +26,11 @@ export class VoteCommand extends Command
     public constructor(message: Discord.Message, bot: Bot)
     {
         super("vote", message, bot);
+    }
+
+    public get title(): string 
+    {
+        return this._title;
     }
 
     public async execute(): Promise<void> 
@@ -241,7 +246,7 @@ export class VoteCommand extends Command
             }
         });
         this.timeout = timeout;
-        this.title = title;
+        this._title = title;
         this.channel = channel;
         this.hostMessageID = message;
         this.emojis = reactions;
