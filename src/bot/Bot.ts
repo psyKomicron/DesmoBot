@@ -42,6 +42,11 @@ export class Bot
             process.stdout.write(`READY\n${Printer.error("-------------------------------------")}\n`);
         });
         this._client.on("message", (message) => { this.onMessage(message); });
+        this._client.on("disconnect", (arg_0, arg_1: number) => 
+        {
+            console.log("Client disconnected :");
+            console.log(`${JSON.stringify(arg_0)}, ${arg_1}`);
+        })
         this._client.login(TokenReader.getToken());
     }
 
@@ -62,15 +67,23 @@ export class Bot
             {
                 if (name.substr(1) == "end")
                 {
-                    try
+                    let index = content.split(" ")[1];
+                    if (!Number.isNaN(Number.parseInt(index)))
                     {
-                        let index = content.split(" ")[1];
-                        if (!Number.isNaN(Number.parseInt(index)))
+                        try 
+                        {
                             VoteLogger.end(Number.parseInt(index));
-                        if (message.deletable)
-                            message.delete();
+                        } catch (error) 
+                        {
+                            if (error instanceof RangeError)
+                            {
+                                console.log(Printer.error(error.message));
+                                console.error(error);
+                            }
+                        }
                     }
-                    catch (error) { }
+                    if (message.deletable)
+                        message.delete();
                 }
                 else
                 {
@@ -113,6 +126,11 @@ Such as \`${this.prefix}chef -message "Bork! Bork! Bork!"\``);
                 }
             }
         }
+    }
+
+    private on(): void
+    {
+
     }
 }
 
