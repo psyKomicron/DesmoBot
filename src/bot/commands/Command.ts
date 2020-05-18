@@ -6,22 +6,22 @@ export abstract class Command
 {
     private static _commands: number = 0;
     private readonly _bot: Bot;
-    private name: string;
+    private _name: string;
     private _message: Discord.Message;
 
     protected constructor(name: string, message: Discord.Message, bot: Bot)
     {
         Command._commands++;
-        this.name = name;
+        this._name = name;
         this._message = message;
         this._bot = bot;
     }
 
     public abstract async execute(): Promise<void>;
 
-    public static get Commands(): number { return this._commands; }
+    public static get commands(): number { return this._commands; }
 
-    public get Name(): string { return this.name; }
+    public get name(): string { return this._name; }
 
     protected get message(): Discord.Message { return this._message; }
 
@@ -52,7 +52,9 @@ export abstract class Command
                     for (i += 1; i < content.length; i++) 
                     {
                         if (content[i] != " ")
+                        {
                             key += content[i];
+                        }
                         else 
                         {
                             i++;
@@ -71,9 +73,13 @@ export abstract class Command
                         if ((content.charCodeAt(i) > 47 && content.charCodeAt(i) < 58) ||
                             (content.charCodeAt(i) > 64 && content.charCodeAt(i) < 91) ||
                             (content.charCodeAt(i) > 96 && content.charCodeAt(i) < 123))
+                        {
                             value += content[i];
+                        }
                         else if (content[i] != "\"" && comma)
+                        {
                             value += content[i];
+                        }
                         else marker = false;
                         if (marker) i++;
                     }
@@ -123,9 +129,9 @@ export abstract class Command
             ],
             "command": [
                 {
-                    "name": this.name,
+                    "name": this._name,
                     "arguments": data,
-                    "command number": `${Command.Commands}`,
+                    "command number": `${Command.commands}`,
                     "message id": `${this.message.id}`,
                     "message": this.message
                 }
