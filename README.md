@@ -1,6 +1,6 @@
 # DesmoBot
 
-## Functionalities
+## Commands
 |Name      | Command Syntax                                                                                                                            | Description |
 |:--------:|:-----------------------------------------------------------------------------------------------------------------------------------------:|:------------|
 | Delete   |`/delete -n [number of messages] -c [channel snowflake/id] -u [discord username (ex: user#1234)]` | Deletes a given number of messages in a given channel. If `-u` is used, deletes only the messages send by the specified user|
