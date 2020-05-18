@@ -1,7 +1,6 @@
-import fs = require('fs');
 import Discord = require('discord.js');
 import readline = require('readline');
-import { TokenReader } from './dal/Readers';
+import { TokenReader, FileSystem as fs } from './dal/Readers';
 import { CommandFactory } from './commands/factory/CommandFactory';
 import { clearInterval } from 'timers';
 import { Printer } from '../console/Printer';
@@ -32,8 +31,8 @@ export class Bot
         // initiate directories
         const directories = ["./files", "./files/downloads", "./files/logs"];
         for (var i = 0; i < directories.length; i++)
-            if (!fs.existsSync(directories[i]))
-                fs.mkdir(directories[i], () => { });
+            if (!fs.exists(directories[i]))
+                fs.mkdir(directories[i]);
         // initiate bot
         this._client.on("ready", () =>
         {
@@ -72,6 +71,8 @@ export class Bot
                     {
                         try 
                         {
+                            console.log(Printer.title("end"));
+                            console.log(Printer.args(["id"], [`${index}`]));
                             VoteLogger.end(Number.parseInt(index));
                         } catch (error) 
                         {
