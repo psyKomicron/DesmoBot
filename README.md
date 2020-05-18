@@ -1,6 +1,4 @@
 # DesmoBot
-## About (long)
-DesmoBot Discord bot, written in TypeScript.
 
 ## Functionalities
 |Name      | Command Syntax                                                                                                                            | Description |
