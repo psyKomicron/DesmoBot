@@ -116,7 +116,7 @@ export class VoteCommand extends Command
                 collector.on('remove', (reaction: Discord.MessageReaction, user: Discord.User) =>
                 {
                     this.votes.delete(user);
-                    // remove from array
+                    //remove from array
                     let users = this.reactions.get(reaction);
                     let newUsers = new Array<Discord.User>();
                     users.forEach(value =>
@@ -132,7 +132,7 @@ export class VoteCommand extends Command
                     let embed = new Discord.MessageEmbed()
                         .setColor(this.messageEmbed.color)
                         .setTitle("Results for " + this.messageEmbed.title);
-                    // copy old embed
+                    //copy old embed
                     if (this.usingEmbed)
                     {
                         this.messageEmbed.fields.forEach(field =>
@@ -140,7 +140,7 @@ export class VoteCommand extends Command
                             embed.addField(field.name, field.value, true);
                         });
                     }
-                    // get reactions
+                    //get reactions
                     this.reactions.forEach((users, reaction) =>
                     {
                         let emoji = reaction.emoji.name;
@@ -149,7 +149,7 @@ export class VoteCommand extends Command
                         {
                             users.forEach(user =>
                             {
-                                votes += "<@" + user.id + ">, ";
+                                votes += `<@${user.id}>, `;
                             });
                         }
                         else
@@ -171,15 +171,14 @@ export class VoteCommand extends Command
             }
             else
             {
-                // "The vote command failed. Check syntax or see if the message used to host the vote was sent by me"
-                throw new WrongArgumentException(this);
+                throw new WrongArgumentException(this, "The vote command failed. Check syntax or see if the message used to host the vote was sent by me");
             }
         }
     }
 
     public end(reason: string): void
     {
-        if (this.collector && !this.timeout)
+        if (this.collector)
         {
             this.collector.stop(reason);
         }
