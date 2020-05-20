@@ -55,13 +55,15 @@ ${Printer.error("-------------------------------------")}`;
      * @param contents
      * @param values
      */
-    public static args(contents: string[], values: string[]): string
+    public static args(contents: string[], values: string[], inline: boolean = false): string
     {
         if (contents.length == values.length)
         {
             let maxLength = -1;
             for (let i = 0; i < contents.length; i++)
+            {
                 if (contents[i].length > maxLength) maxLength = contents[i].length;
+            }
             maxLength += 4;
             let lines = "";
             for (let i = 0; i < contents.length; i++)
@@ -69,16 +71,27 @@ ${Printer.error("-------------------------------------")}`;
                 let arg = "[+] " + contents[i];
                 while (arg.length < maxLength) arg += " ";
                 if (i != contents.length - 1)
-                    arg += ` : ${Printer.printName(values[i])} \n`;
+                {
+                    if (inline && i % 3 != 0)
+                    {
+                        arg += ` : ${Printer.printName(values[i])} `;
+                    }
+                    else
+                    {
+                        arg += ` : ${Printer.printName(values[i])} \n`;
+                    }
+                }
                 else
+                {
                     arg += ` : ${Printer.printName(values[i])}`;
+                }
                 lines += arg;
             }
             return lines;
         }
         else
         {
-            console.error(Printer.error("contents & values not the same size !"));
+            console.error(Printer.error("Contents & values not the same size !"));
             return "";
         }
     }
