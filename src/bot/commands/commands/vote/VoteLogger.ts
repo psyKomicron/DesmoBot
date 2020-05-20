@@ -8,13 +8,8 @@ export class VoteLogger
 
     public static log(vote: VoteCommand): number
     {
-        let name = vote.title;
         // hash title to get id
-        let hashAdrr = 0;
-        for (let counter = 0; counter < name.length; counter++)
-        {
-            hashAdrr = name.charCodeAt(counter) + (hashAdrr << 6) + (hashAdrr << 16) - hashAdrr;
-        }
+        let hashAdrr = VoteLogger.hash(vote.title);
         this.votes.set(hashAdrr, vote);
         return hashAdrr;
     }
@@ -24,5 +19,15 @@ export class VoteLogger
         let vote = this.votes.get(key);
         if (vote) vote.end("user input");
         else throw new RangeError("Cannot find key in vote map");
+    }
+
+    public static hash(value: string): number
+    {
+        let hashAddr = 0;
+        for (let counter = 0; counter < value.length; counter++)
+        {
+            hashAddr = value.charCodeAt(counter) + (hashAddr << 6) + (hashAddr << 16) - hashAddr;
+        }
+        return hashAddr;
     }
 }

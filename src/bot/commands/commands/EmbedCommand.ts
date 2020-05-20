@@ -8,13 +8,13 @@ import { Bot } from '../../Bot';
 
 export class EmbedCommand extends Command
 {
-    private embedValues: [Discord.TextChannel, boolean]
+    private values: [Discord.TextChannel, boolean]
 
     public constructor(message: Discord.Message, bot: Bot)
     {
         super("embed builder", message, bot);
-        this.embedValues = this.getParams(this.parseMessage());
-        if (this.embedValues[0] == undefined)
+        this.values = this.getParams(this.parseMessage());
+        if (this.values[0] == undefined)
             throw "Channel cannot be resolved";
     }
 
@@ -33,7 +33,7 @@ export class EmbedCommand extends Command
 
             console.log(Printer.args(
                 ["json file name", "json file url", "delete after execution", "channel"],
-                [`${jsonName}`, `${fileUrl}`, `${this.embedValues[1]}`, `${this.embedValues[0].name}`]
+                [`${jsonName}`, `${fileUrl}`, `${this.values[1]}`, `${this.values[0].name}`]
             ));
 
             let downloader = new Downloader(this.name);
@@ -61,10 +61,6 @@ export class EmbedCommand extends Command
                         Printer.clearPrint("Object has all required properties", [0, -2]);
                         console.log();
                         let embed = json["embed"];
-                        console.log(Printer.args(
-                            ["color", "description", "fields", "footer", "title"],
-                            [embed["color"], embed["description"], embed["fields"], embed["footer"], embed["title"]]
-                        ));
                         let discordEmbed = new Discord.MessageEmbed()
                             .setColor(embed["color"])
                             .setDescription(embed["description"])
@@ -77,7 +73,7 @@ export class EmbedCommand extends Command
                             let value = fields[i]["description"];
                             discordEmbed.addField(title, value);
                         }
-                        this.embedValues[0].send(discordEmbed);
+                        this.values[0].send(discordEmbed);
                     }
                     else
                     {
@@ -95,10 +91,10 @@ export class EmbedCommand extends Command
                         }
                     }
                     else
+                    {
                         console.error(error);
-
+                    }
                 }
-                // cleaning directory async
                 finally
                 {
                     // removing the used json file
@@ -113,18 +109,13 @@ export class EmbedCommand extends Command
         {
             console.log(Printer.args(
                 [Printer.error("json file url"), "delete after execution"],
-                [`${Printer.error(fileUrl)}`, `${this.embedValues[1]}`]
+                [`${Printer.error(fileUrl)}`, `${this.values[1]}`]
             ));
-            throw new Error("no valid uri/url for the json file");
+            throw new Error("No valid uri/url for the json file");
         }
         // 3 -delete original message with 1 sec delay
-        if (this.message.deletable && this.embedValues[1])
-            this.message.delete({ timeout: 100 });
-    }
-
-    public buildEmbed(): Discord.MessageEmbed
-    {
-        return null;
+        if (this.message.deletable && this.values[1])
+            this.message.delete({ timeout: 1000 });
     }
 
     private getParams(args: Map<string, string>): [Discord.TextChannel, boolean]
