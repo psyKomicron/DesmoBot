@@ -5,6 +5,7 @@ import { Downloader } from '../../../network/Downloader';
 import { Printer } from '../../../console/Printer';
 import { JSONParser } from '../../dal/json/JSONParser';
 import { Bot } from '../../Bot';
+import { EmbedFactory } from '../factory/EmbedFactory';
 
 export class EmbedCommand extends Command
 {
@@ -30,55 +31,22 @@ export class EmbedCommand extends Command
         if (fileUrl)
         {
             let jsonName = Downloader.getFileName(fileUrl);
-
             console.log(Printer.args(
                 ["json file name", "json file url", "delete after execution", "channel"],
                 [`${jsonName}`, `${fileUrl}`, `${this.values[1]}`, `${this.values[0].name}`]
             ));
-
             let downloader = new Downloader(this.name);
             await downloader.download([fileUrl]);
-
             setTimeout(() =>
             {
                 let fileContent = fs.readFile(`${downloader.path}${jsonName}`).toString();
                 try
                 {
                     let json = JSON.parse(fileContent);
-                    let parser = new JSONParser();
-                    const template =
-                    {
-                        "embed": {
-                            "color": 1,
-                            "description": "",
-                            "fields": [ { "title": "", "description": "" } ],
-                            "footer": "",
-                            "title": ""
-                        },
-                    };
-                    if (parser.matchTemplate(json, template))
-                    {
-                        Printer.clearPrint("Object has all required properties", [0, -2]);
-                        console.log();
-                        let embed = json["embed"];
-                        let discordEmbed = new Discord.MessageEmbed()
-                            .setColor(embed["color"])
-                            .setDescription(embed["description"])
-                            .setFooter(embed["footer"])
-                            .setTitle(embed["title"]);
-                        let fields = embed["fields"];
-                        for (var i = 0; i < fields.length; i++)
-                        {
-                            let title = fields[i]["title"];
-                            let value = fields[i]["description"];
-                            discordEmbed.addField(title, value);
-                        }
-                        this.values[0].send(discordEmbed);
-                    }
-                    else
-                    {
-                        throw "Cannot use object";
-                    }
+                    Printer.clearPrint("Object has all required properties", [0, -2]);
+                    console.log();
+                    let discordEmbed = EmbedFactory.build(json); // throw TypeError
+                    this.values[0].send(discordEmbed);
                 }
                 catch (error)
                 {
