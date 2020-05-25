@@ -1,8 +1,6 @@
-import { Printer } from "../../../console/Printer";
-
 export class JSONParser
 {
-    public checkProperties(json: any, properties: string[]): boolean
+    /*public checkProperties(json: any, properties: string[]): boolean
     {
         let checked = false;
         let hasAll = false;
@@ -35,9 +33,9 @@ export class JSONParser
             else throw "Given object is malformed";
         }
         return checked;
-    }
+    }*/
 
-    public matchTemplate(json: any, template: any): boolean
+    public static matchTemplate(json: any, template: any): boolean
     {
         let match = false;
         for (let rootName in template)
