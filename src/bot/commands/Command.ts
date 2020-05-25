@@ -27,6 +27,14 @@ export abstract class Command
 
     protected get bot(): Bot { return this._bot; }
 
+    public deleteMessage(): void
+    {
+        if (this.message && this.message.deletable)
+        {
+            this.message.delete();
+        }
+    }
+
     protected parseMessage(): Map<string, string>
     {
         // parse with args (-x -y...)
