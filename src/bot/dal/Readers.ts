@@ -5,14 +5,26 @@ export class TokenReader
 {
     public static getToken(): string 
     {
-        let str = "";
+        let token = "";
         try {
-            str = fs.readFileSync("./node_modules/token.txt", "UTF-8");
+            token = fs.readFileSync("./node_modules/token.txt", "UTF-8");
         } catch (e) {
-            console.log(e);
-            str = "";
+            try
+            {
+                token = process.env.token;
+                if (!token) throw new TypeError(`"token" env variable does not exists`);
+            }
+            catch (error)
+            {
+                if (error instanceof TypeError)
+                {
+                    console.error("Could not get token from file :\n"+ Printer.error(e) + "\n or env variable : \n" + Printer.warn(error.message));
+                }
+                else console.error(error);
+                token = "";
+            }
         }
-        return str;
+        return token;
     }
 }
 
