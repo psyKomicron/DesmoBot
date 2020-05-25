@@ -187,19 +187,25 @@ ${Printer.error("-------------------------------------")}`;
     }
     private static printName(name: string)
     {
-        if (name.length > 23)
+        if (name.length > 25)
         {
             let firstName = "";
             for (var i = 0; i < 10; i++)
+            {
                 firstName += name.charAt(i);
+            }
             firstName += "[...]";
             let endName = "";
             for (var j = name.length - 10; j < name.length; j++)
+            {
                 endName += name.charAt(j);
+            }
             return firstName + endName;
         }
         else
+        {
             return name;
+        }
     }
 }
 
