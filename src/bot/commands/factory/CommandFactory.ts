@@ -9,6 +9,7 @@ import { EmbedCommand } from '../commands/EmbedCommand';
 import { DefaultCommand } from '../commands/DefaultCommand';
 import { TestCommand } from '../commands/TestCommand';
 import { ReplyCommand } from '../commands/ReplyCommand';
+import { ExploreCommand } from '../commands/ExploreCommand';
 
 export class CommandFactory
 {
@@ -18,31 +19,35 @@ export class CommandFactory
         switch (type)
         {
             case "dl":
-            case "download":
-                command = new DownloadCommand(message, bot);
+                case "download":
+                    command = new DownloadCommand(message, bot);
                 break;
             case "d":
-            case "delete":
-                command = new DeleteCommand(message, bot);
-                break;
-            case "h":
-            case "help":
-                command = new HelpCommand(message, bot);
-                break;
-            case "v":
-            case "vote":
-                command = new VoteCommand(message, bot);
+                case "delete":
+                    command = new DeleteCommand(message, bot);
                 break;
             case "embed":
                 command = new EmbedCommand(message, bot);
                 break;
+            case "e":
+                case "explore":
+                    command = new ExploreCommand(message, bot);
+                break;
+            case "h":
+                case "help":
+                    command = new HelpCommand(message, bot);
+                break;
             case "r":
-            case "reply":
-                command = new ReplyCommand(message, bot);
+                case "reply":
+                    command = new ReplyCommand(message, bot);
                 break;
             case "t":
-            case "test":
-                command = new TestCommand(message, bot);
+                case "test":
+                    command = new TestCommand(message, bot);
+                break;
+            case "v":
+                case "vote":
+                    command = new VoteCommand(message, bot);
                 break;
             default:
                 command = new DefaultCommand(message, bot);
