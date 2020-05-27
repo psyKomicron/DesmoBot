@@ -17,6 +17,7 @@ export abstract class Command
         this._bot = bot;
     }
 
+    /**Execute the command async */
     public abstract async execute(): Promise<void>;
 
     public static get commands(): number { return this._commands; }
@@ -27,6 +28,7 @@ export abstract class Command
 
     protected get bot(): Bot { return this._bot; }
 
+    /**Delete the command message (here to avoid code redundancy) */
     public deleteMessage(): void
     {
         if (this.message && this.message.deletable)
@@ -35,7 +37,9 @@ export abstract class Command
         }
     }
 
-    protected parseMessage(): Map<string, string>
+    /**Parse the command message content to get parameters and returns a map of
+     the arguments name paired with their values */
+    public parseMessage(): Map<string, string>
     {
         // parse with args (-x -y...)
         let rawContent = this._message.content.substring(1);
@@ -100,10 +104,15 @@ export abstract class Command
         return map;
     }
 
-    protected resolveChannel(value: string): Discord.TextChannel
+    /**
+     * Resolve a channel through the Discord API. If the channel id is not a channel
+     * id, the return value will be undefined.
+     * @param channelID string-Discord.Snowflake representing a Discord.TextChannel id.
+     */
+    public resolveChannel(channelID: string): Discord.TextChannel
     {
         let channel: Discord.TextChannel;
-        let resolvedChannel = this._message.guild.channels.resolve(value);
+        let resolvedChannel = this._message.guild.channels.resolve(channelID);
         if (resolvedChannel && resolvedChannel instanceof Discord.TextChannel)
         {
             channel = resolvedChannel;
@@ -111,6 +120,14 @@ export abstract class Command
         return channel;
     }
 
+    /**
+     * Write logs in a json file when the command asks to parse messages. If the file is to big, 
+     * another file is created to store the newly created logs.
+     * Logs user info (username, discriminator); command info (name, arguments, number of the 
+     * command); message info and message.
+     * @param map Arguments of the command
+     * @param message Message that launched this command.
+     */
     private writeLogs(map: Map<string, string>, message: Discord.Message)
     {
         const filepath = "./files/logs/";
