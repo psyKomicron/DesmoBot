@@ -5,7 +5,7 @@ import { CommandFactory } from './commands/factory/CommandFactory';
 import { clearInterval } from 'timers';
 import { Printer } from '../console/Printer';
 import { VoteLogger } from './commands/commands/vote/VoteLogger';
-import { CustomException } from './exceptions/CustomException';
+import { CustomError } from './errors/CustomError';
 
 export class Bot 
 {
@@ -92,7 +92,7 @@ export class Bot
                     command.execute()
                         .catch(error =>
                         {
-                            if (error instanceof CustomException)
+                            if (error instanceof CustomError)
                             {
                                 console.error(Printer.error(`${error.name} failed : ${error.message}`));
                                 if (this.verbose)
@@ -111,7 +111,7 @@ Such as \`${this.prefix}chef -message "Bork! Bork! Bork!"\``);
                 }
             } catch (error)
             {
-                if (error instanceof CustomException)
+                if (error instanceof CustomError)
                 {
                     if (this.verbose)
                     {
