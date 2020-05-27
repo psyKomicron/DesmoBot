@@ -1,39 +1,49 @@
 import fetch = require('node-fetch');
-import Discord = require('discord.js');
+import { MessageEmbed } from 'discord.js';
 import { ExploreCommand } from "../ExploreCommand";
 
 export abstract class Explorer
 {
-    private _url: string;
+    private _keyword: string;
     private command: ExploreCommand;
 
-    public constructor(url: string, command: ExploreCommand)
+    public constructor(keyword: string, command: ExploreCommand)
     {
-        
-        this._url = url;
+        this._keyword = keyword;
         this.command = command;
     }
 
-    protected get url(): string
+    public urlize(url: string, keyword: string, spaceReplace: string): string
     {
-        return this._url;
+        let keywordUrl = keyword.replace(/([ ])/g, spaceReplace);
+        return url + keywordUrl;
     }
 
-    protected set url(html)
+    protected get keyword(): string
     {
-        this._url = html;
+        return this._keyword;
     }
 
-    protected async getHTML(): Promise<string>
+    protected set keyword(html)
     {
-        let res = await fetch(this.url);
+        this._keyword = html;
+    }
+
+    protected async getHTML(url: string): Promise<string>
+    {
+        let res = await fetch(url);
         let html = await res.text();
         return html;
     }
 
-    protected send(embed: Discord.MessageEmbed): void
+    protected send(embed: MessageEmbed): void
     {
-        this.command.send(embed);
+        this.command.send(embed)
+            .catch(e =>
+            {
+                if (e instanceof Error)
+                    console.error(e.message.substr(0, 30) + "[...]");
+            });
     }
 
     public abstract async explore(): Promise<void>;
