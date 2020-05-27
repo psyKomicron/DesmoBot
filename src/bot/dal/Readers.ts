@@ -1,5 +1,11 @@
 import fs = require('fs');
 import { Printer } from '../../console/Printer';
+import { YoutubeAPIKeyError } from '../errors/customs/YoutubeAPIKeyError';
+
+export interface YoutubeAPIKey
+{
+    key: string;
+}
 
 export class TokenReader
 {
@@ -26,25 +32,16 @@ export class TokenReader
         }
         return token;
     }
-}
 
-export class EmojiReader
-{
-    public static getEmoji(name: string): string
+    public static getYoutubeAPIKey(): YoutubeAPIKey
     {
-        let res = undefined;
-        try
+        let token = "";
+        token = process.env.API_key;
+        if (!token)
         {
-            res = fs.readFileSync("./src/bot/emojis/" + name, "UTF-8");
+            console.log(Printer.warn(`"API_key" env variable does not exists`));
         }
-        catch (error)
-        {
-            if ((error as Error).name == "EONENT")
-                console.log(Printer.error(`Cannot find emoji ${name}, maybe it was deleted or hasn't been created`));
-            else
-                console.error(Printer.error((error as Error).message));
-        }
-        return res;
+        return { key: token };
     }
 }
 
@@ -88,5 +85,25 @@ export class FileSystem
     public static getStats(path: string): fs.Stats
     {
         return fs.statSync(path);
+    }
+}
+
+export class EmojiReader
+{
+    public static getEmoji(name: string): string
+    {
+        let res = undefined;
+        try
+        {
+            res = fs.readFileSync("./src/bot/emojis/" + name, "UTF-8");
+        }
+        catch (error)
+        {
+            if ((error as Error).name == "EONENT")
+                console.log(Printer.error(`Cannot find emoji ${name}, maybe it was deleted or hasn't been created`));
+            else
+                console.error(Printer.error((error as Error).message));
+        }
+        return res;
     }
 }
