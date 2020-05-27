@@ -3,7 +3,6 @@ import { Bot } from "./src/bot/Bot";
 import { Printer } from "./src/console/Printer";
 import { StarEffect } from "./src/console/effects/StarEffect";
 // end necessary imports
-import { WebServer } from "./src/network/web/WebServer";
 
 // ------- Tests --------
 // new WebServer().startService();
