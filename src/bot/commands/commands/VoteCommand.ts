@@ -4,7 +4,7 @@ import { EmojiReader } from '../../dal/Readers';
 import { Printer } from '../../../console/Printer';
 import { Bot } from '../../Bot';
 import { VoteLogger } from './vote/VoteLogger';
-import { WrongArgumentException } from '../../exceptions/customs/WrongArgumentException';
+import { WrongArgumentError } from '../../errors/customs/WrongArgumentError';
 
 export class VoteCommand extends Command
 {
@@ -92,7 +92,7 @@ export class VoteCommand extends Command
                         }
                     });
                 }
-                else throw new WrongArgumentException(this);
+                else throw new WrongArgumentError(this);
                 this.voteMessage = hostMessage;
             }
             if (this.voteMessage.author.tag == this.bot.client.user.tag)
@@ -171,7 +171,7 @@ export class VoteCommand extends Command
             }
             else
             {
-                throw new WrongArgumentException(this, "The vote command failed. Check syntax or see if the message used to host the vote was sent by me");
+                throw new WrongArgumentError(this, "The vote command failed. Check syntax or see if the message used to host the vote was sent by me");
             }
         }
     }
