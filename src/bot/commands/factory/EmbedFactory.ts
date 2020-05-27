@@ -1,37 +1,34 @@
-import Discord = require('discord.js');
+import { MessageEmbed, EmbedField, User } from 'discord.js';
 import { JSONParser } from '../../dal/json/JSONParser';
 
 export class EmbedFactory
 {
-    public static build(json: any): Discord.MessageEmbed
+    public static build(resolvable: EmbedFactoryResolvable): MessageEmbed
     {
-        const template = {
-            "embed": {
-                "color": 1,
-                "description": "",
-                "footer": "",
-                "title": ""
-            }
-        };
-        if (!JSONParser.matchTemplate(json, template))
-        {
-            throw new TypeError("Object given to factory not matching \"MessageEmbed\" template");
-        }
-        let messageEmbed: Discord.MessageEmbed = new Discord.MessageEmbed();
-        let embed = json["embed"];
+        let messageEmbed: MessageEmbed = new MessageEmbed();
         messageEmbed
-            .setTitle(embed["title"])
-            .setColor(embed["color"])
-            .setDescription(embed["description"])
-            .setFooter(embed["footer"]);
-        let fields = embed["fields"];
+            .setTitle(resolvable.title)
+            .setColor(resolvable.color)
+            .setDescription(resolvable.description)
+            .setFooter(resolvable.footer);
+        let fields = resolvable.fields;
         if (fields)
         {
-            for (var i = 0; i < fields.length; i++)
+            for (var i = 0; i < fields.length && i < 25; i++)
             {
-                messageEmbed.addField(fields[i]["title"], fields[i]["description"]);
+                messageEmbed.addField(fields[i].name, fields[i].value, fields[i]?.inline);
             }
         }
         return messageEmbed;
     }
+}
+
+export interface EmbedFactoryResolvable
+{
+    author?: User;
+    color: number;
+    description: string;
+    footer: string;
+    title: string;
+    fields?: Array<EmbedField>;
 }
