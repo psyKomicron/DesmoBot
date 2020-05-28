@@ -1,30 +1,34 @@
-import Discord = require('discord.js');
+import { Client, Message } from 'discord.js';
 import readline = require('readline');
-import { TokenReader, FileSystem as fs } from './dal/Readers';
-import { CommandFactory } from './commands/factory/CommandFactory';
 import { clearInterval } from 'timers';
+import { Logger } from './commands/logger/Logger';
 import { Printer } from '../console/Printer';
-import { VoteLogger } from './commands/commands/vote/VoteLogger';
 import { CustomError } from './errors/CustomError';
+import { CommandFactory } from './commands/factory/CommandFactory';
+import { TokenReader, FileSystem as fs, EmojiReader } from './dal/Readers';
+import { DefaultLogger } from './commands/logger/loggers/DefaultLogger';
 
 export class Bot 
 {
     // own
+    private _logger: Logger = new DefaultLogger();
     private prefix: string = "/";
-    private readonly parents = ["psyKomicron#6527", "desmoclublyon#3056", "marquez#5719"];
+    private readonly parents = ["psyKomicron#6527", "desmoclublyon#3056", "marquez#5719", "Onyxt#9305"];
     private readonly verbose: boolean = true;
     // discord
-    private readonly _client: Discord.Client = new Discord.Client();
+    private readonly _client: Client = new Client();
 
     public constructor(id: NodeJS.Timeout) 
     {
         this.init(id);
     }
 
-    public get client(): Discord.Client
+    public get client(): Client
     {
         return this._client;
     }
+
+    public get logger(): Logger { return this._logger; }
 
     private init(id: NodeJS.Timeout): void
     {
@@ -49,7 +53,7 @@ export class Bot
         this._client.login(TokenReader.getToken());
     }
 
-    private onMessage(message: Discord.Message): void 
+    private onMessage(message: Message): void 
     {
         let content = message.content;
         if (content.startsWith(this.prefix) && this.parents.includes(message.author.tag))
@@ -64,29 +68,8 @@ export class Bot
             }
             try
             {
-                if (name.substr(1) == "end")
-                {
-                    let index = content.split(" ")[1];
-                    if (!Number.isNaN(Number.parseInt(index)))
-                    {
-                        try 
-                        {
-                            console.log(Printer.title("end"));
-                            console.log(Printer.args(["id"], [`${index}`]));
-                            VoteLogger.end(Number.parseInt(index));
-                        } catch (error) 
-                        {
-                            if (error instanceof RangeError)
-                            {
-                                console.log(Printer.error(error.message));
-                                console.error(error);
-                            }
-                        }
-                    }
-                    if (message.deletable)
-                        message.delete();
-                }
-                else
+                let handled = this.logger.handle(message);
+                if (!handled)
                 {
                     let command = CommandFactory.create(name.substr(1), message, this);
                     command.execute()
@@ -103,9 +86,7 @@ export class Bot
                             else if (this.verbose)
                             {
                                 console.error(error);
-                                message.author.send(
-`It seems you have send a message with a content that I did not understand (most likely it contained spaces). Try again putting "" around arguments values.
-Such as \`${this.prefix}chef -message "Bork! Bork! Bork!"\``);
+                                message.author.send("Uh oh... Something went wrong ! Try again !");
                             }
                         });
                 }
@@ -115,23 +96,17 @@ Such as \`${this.prefix}chef -message "Bork! Bork! Bork!"\``);
                 {
                     if (this.verbose)
                     {
-                        console.error(Printer.error(error.name));
-                        message.author.send(error.message);
+                        console.error(Printer.error(error.message));
+                        message.author.send(`Command (\`${error.name}\`) failed. Message : \n${error.message}`);
                     }
                 }
                 else if (this.verbose)
                 {
                     console.error(error);
-                    message.author.send(`It seems you have send a message with a content that I did not understand (most likely it contained spaces). Try again putting "" around arguments values.
-Such as \`${this.prefix}chef -message "Bork! Bork! Bork!"\``);
+                    message.author.send("Uh oh... Something went wrong ! Try again !");
                 }
             }
         }
-    }
-
-    private on(): void
-    {
-
     }
 }
 
