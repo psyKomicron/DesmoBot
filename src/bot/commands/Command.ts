@@ -1,5 +1,5 @@
 import { FileSystem as fs } from "../dal/Readers";
-import Discord = require('discord.js');
+import { Message, TextChannel, GuildChannel} from 'discord.js';
 import { Bot } from "../Bot";
 
 export abstract class Command
@@ -7,14 +7,14 @@ export abstract class Command
     private static _commands: number = 0;
     private readonly _bot: Bot;
     private _name: string;
-    private _message: Discord.Message;
+    private _message: Message;
 
-    protected constructor(name: string, message: Discord.Message, bot: Bot)
+    protected constructor(name: string, message: Message, bot: Bot)
     {
         Command._commands++;
-        this._name = name;
-        this._message = message;
         this._bot = bot;
+        this._message = message;
+        this._name = name;
     }
 
     /**Execute the command async */
@@ -24,9 +24,10 @@ export abstract class Command
 
     public get name(): string { return this._name; }
 
-    protected get message(): Discord.Message { return this._message; }
+    protected get message(): Message { return this._message; }
 
     protected get bot(): Bot { return this._bot; }
+
 
     /**Delete the command message (here to avoid code redundancy) */
     public deleteMessage(): void
@@ -105,15 +106,33 @@ export abstract class Command
     }
 
     /**
-     * Resolve a channel through the Discord API. If the channel id is not a channel
-     * id, the return value will be undefined.
+     * Resolve a text channel through the Discord API. Returns undefined if the id isn't
+     * recognized.
      * @param channelID string-Discord.Snowflake representing a Discord.TextChannel id.
+     * @returns The resolved TextChannel
      */
-    public resolveChannel(channelID: string): Discord.TextChannel
+    public resolveTextChannel(channelID: string): TextChannel
     {
-        let channel: Discord.TextChannel;
+        let channel: TextChannel;
         let resolvedChannel = this._message.guild.channels.resolve(channelID);
-        if (resolvedChannel && resolvedChannel instanceof Discord.TextChannel)
+        if (resolvedChannel && resolvedChannel instanceof TextChannel)
+        {
+            channel = resolvedChannel;
+        }
+        return channel;
+    }
+
+    /**
+     * Resolve a channel (text, voice, category, news, store) through the Discord API.
+     * Returns undefined if the id isn't recognized.
+     * @param channelID string | Discord.Snowflake representing a Channel id.
+     * @returns The resolved GuildChannel.
+     */
+    public resolveChannel(channelID: string): GuildChannel
+    {
+        let channel: GuildChannel;
+        let resolvedChannel = this._message.guild.channels.resolve(channelID);
+        if (resolvedChannel)
         {
             channel = resolvedChannel;
         }
@@ -128,7 +147,7 @@ export abstract class Command
      * @param map Arguments of the command
      * @param message Message that launched this command.
      */
-    private writeLogs(map: Map<string, string>, message: Discord.Message)
+    private writeLogs(map: Map<string, string>, message: Message)
     {
         const filepath = "./files/logs/";
         const name = "command_logs";
