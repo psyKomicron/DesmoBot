@@ -5,7 +5,6 @@ import { StarEffect } from "./src/console/effects/StarEffect";
 // end necessary imports
 
 // ------- Tests --------
-// new WebServer().startService();
 // -------- Code --------
 Printer.startUp();
 let loadingEffect = new StarEffect("", [-17, -1]);
@@ -15,5 +14,5 @@ try
     new Bot(id);
 } catch (e)
 {
-    console.log(e);
+    console.error(e);
 }
