@@ -3,12 +3,11 @@ import { Command } from '../Command';
 import { EmojiReader } from '../../dal/Readers';
 import { Printer } from '../../../console/Printer';
 import { Bot } from '../../Bot';
-import { VoteLogger } from './vote/VoteLogger';
 import { WrongArgumentError } from '../../errors/customs/WrongArgumentError';
+import { VoteLogger } from '../logger/loggers/VoteLogger';
 
 export class VoteCommand extends Command
 {
-    private id: number;
     private voteMessage: Discord.Message;
     private messageEmbed: Discord.MessageEmbed;
     private collector: Discord.ReactionCollector;
@@ -44,7 +43,9 @@ export class VoteCommand extends Command
             [`${this.timeout}`, this.title, this.channel?.id, `${this.hostMessageID}`]));
         if (this.channel instanceof Discord.TextChannel)
         {
-            this.id = VoteLogger.log(this);
+            let logger = new VoteLogger();
+            this.bot.logger.addLogger(logger);
+            let id = logger.logVote(this);
             let voteTime: string = "";
             if (this.timeout == undefined)
             {
@@ -60,7 +61,7 @@ export class VoteCommand extends Command
                     .setTitle(this.title)
                     .addField("Time limit", voteTime)
                     .setColor(Math.floor(Math.random() * 16777215))
-                    .setFooter("Vote id : " + this.id);
+                    .setFooter("Vote id : " + id);
                 this.voteMessage = await (this.channel as Discord.TextChannel)?.send(this.messageEmbed);
                 this.emojis.push(new Discord.Emoji(this.bot.client, { name: EmojiReader.getEmoji("green_check") }));
                 this.emojis.push(new Discord.Emoji(this.bot.client, { name: EmojiReader.getEmoji("green_cross") }));
