@@ -1,6 +1,5 @@
 import fs = require('fs');
 import { Printer } from '../../console/Printer';
-import { YoutubeAPIKeyError } from '../errors/customs/YoutubeAPIKeyError';
 
 export interface YoutubeAPIKey
 {
@@ -90,19 +89,31 @@ export class FileSystem
 
 export class EmojiReader
 {
-    public static getEmoji(name: string): string
+    public static getEmoji(name: "green_check" | "green_cross" | "thinking" | "warning" | "red_cross" | number): string
     {
         let res = undefined;
         try
         {
-            res = fs.readFileSync("./src/bot/emojis/" + name, "UTF-8");
+            let json = JSON.parse(FileSystem.readFile("./src/bot/emojis/emojis.json").toString());
+            let emojis = json["emojis"];
+            for (var i = 0; i < emojis.length; i++)
+            {
+                if (emojis[i].name == name)
+                {
+                    res = emojis[i].value;
+                }
+            }
         }
         catch (error)
         {
             if ((error as Error).name == "EONENT")
+            {
                 console.log(Printer.error(`Cannot find emoji ${name}, maybe it was deleted or hasn't been created`));
+            }
             else
+            {
                 console.error(Printer.error((error as Error).message));
+            }
         }
         return res;
     }
