@@ -180,9 +180,9 @@ export class DownloadCommand extends Command
                     }
                     break;
                 case "c":
-                    if (this.resolveChannel(value))
+                    if (this.resolveTextChannel(value))
                     {
-                        channel = this.resolveChannel(value);
+                        channel = this.resolveTextChannel(value);
                     }
                     break;
                 case "s":
