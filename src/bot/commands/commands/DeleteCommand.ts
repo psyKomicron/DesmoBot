@@ -133,7 +133,7 @@ export class DeleteCommand extends Command
                     }
                     break;
                 case "c":
-                    let resolvedChannel = this.resolveChannel(value);
+                    let resolvedChannel = this.resolveTextChannel(value);
                     if (resolvedChannel)
                     {
                         channel = resolvedChannel;
