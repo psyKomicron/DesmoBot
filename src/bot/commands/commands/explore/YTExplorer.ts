@@ -12,8 +12,6 @@ export class YTExplorer extends Explorer
         try
         {
             let ytModule = new YoutubeModule(TokenReader.getYoutubeAPIKey());
-            console.log(Printer.info("Sucessfully created youtube data API client"));
-
             ytModule.searchVideos(this.keyword, 10, "en")
                 .then(res =>
                 {
@@ -23,7 +21,7 @@ export class YTExplorer extends Explorer
                         description: `Youtube search for \`${this.keyword}\``,
                         footer: "made by Julie"
                     });
-                    for (var i = 0; i < 10; i++)
+                    for (var i = 0; i < 10 && i < res.items.length; i++)
                     {
                         let item = res.items[i];
                         let name = "**" + item.title + "**";
