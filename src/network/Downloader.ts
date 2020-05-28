@@ -19,7 +19,7 @@ export class Downloader
         }
     }
 
-    public async download(urls: Array<string>): Promise<string>
+    public async download(urls: Array<string>): Promise<void>
     {
         let names = new Array<string>();
         for (let i = 0; i < urls.length; i++)
@@ -63,7 +63,6 @@ export class Downloader
         {
             fs.appendFileSync(this.path + "logs.txt", `${url}\n`);
         });
-        return "wrote results into " + this.path + "logs.txt";
     }
 
     private renameFiles(names: Array<string>): Array<string>
