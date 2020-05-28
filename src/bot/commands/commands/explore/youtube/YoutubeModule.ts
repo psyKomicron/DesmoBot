@@ -56,8 +56,34 @@ export class YoutubeModule
         return searchResults;
     }
 
-    private stringify(value: string)
+    /**
+     * Cleans a string from html symbols, and replace them with their values.
+     * @param value String to clean
+     */
+    public stringify(value: string)
     {
+        // regex for html codes : /(&[A-z]+;)|(&#[0-9]+;)/g
+        // replace const symbols
+        const lookup = [
+            { "regex": /(&amp;)/g, "replace": "&" },
+            { "regex": /(&quote;)/g, "replace": "\""}
+        ]
+        for (var i = 0; i < lookup.length; i++)
+        {
+            if (value.match(lookup[i].regex))
+            {
+                value = value.replace(lookup[i].regex, lookup[i].replace);
+            }
+        }
+        // replace ascii specials chars
+        for (var j = 32; j < 101; j++)
+        {
+            let regex = new RegExp(`&#[${j}]+;`);
+            if (value.match(regex))
+            {
+                value = value.replace(regex, String.fromCharCode(j));
+            }
+        }
         return value;
     }
 }
