@@ -68,7 +68,7 @@ ${Printer.error("-------------------------------------")}`;
             let lines = "";
             for (let i = 0; i < contents.length; i++)
             {
-                let arg = "[+] " + contents[i];
+                let arg = "(-) " + contents[i];
                 while (arg.length < maxLength) arg += " ";
                 if (i != contents.length - 1)
                 {
