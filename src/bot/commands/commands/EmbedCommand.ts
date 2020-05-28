@@ -98,8 +98,8 @@ export class EmbedCommand extends Command
                     willDelete = true;
                     break;
                 case "c":
-                    if (this.resolveChannel(value))
-                        channel = this.resolveChannel(value);
+                    if (this.resolveTextChannel(value))
+                        channel = this.resolveTextChannel(value);
                     break;
                 default:
             }
