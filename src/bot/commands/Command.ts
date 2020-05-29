@@ -40,10 +40,10 @@ export abstract class Command
 
     /**Parse the command message content to get parameters and returns a map of
      the arguments name paired with their values */
-    public parseMessage(): Map<string, string>
+    public parseMessage(message: Message = this._message): Map<string, string>
     {
         // parse with args (-x -y...)
-        let rawContent = this._message.content.substring(1);
+        let rawContent = message.content.substring(1);
         // remove command name
         let substr = 0;
         while (substr < rawContent.length && rawContent[substr] != "-") { substr++; }
@@ -101,7 +101,7 @@ export abstract class Command
             }
             else i++;
         }
-        this.writeLogs(map, this._message);
+        this.writeLogs(map, message);
         return map;
     }
 
