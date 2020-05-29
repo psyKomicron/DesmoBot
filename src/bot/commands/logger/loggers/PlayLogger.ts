@@ -9,11 +9,14 @@ export class PlayLogger extends Logger
     public handle(message: Message): boolean 
     {
         let can: boolean;
-        if (message.content.substr(1).match(/(leave)+/g))
+        if (message.content.substr(1).match(/(leave)+/g) ||
+            message.content.substr(1).match(/(play)+/g) ||
+            message.content.substr(1).match(/(next)+/g))
         {
             can = true;
             this.work(message);
         }
+
         else
         {
             if (this.next)
@@ -32,12 +35,23 @@ export class PlayLogger extends Logger
     {
         if (this.player.channel.guild == message.guild)
         {
-            this.player.disconnect();
+            if (message.content.substr(1).match(/(leave)+/g))
+            {
+                this.player.disconnect();
+            }
+            else if (message.content.substr(1).match(/(play)+/g))
+            {
+                this.player.addToPlaylist(message);
+            }
+            else if (message.content.substr(1).match(/(next)+/g))
+            {
+                this.player.playNext();
+            }
         }
     }
 
     /**
-     * Can only log one player at once. Will disconnect previous player when called.
+     * Can only log one player at once. Will disconnect previous player when called on the same logger.
      * @param player
      */
     public logPlayer(player: PlayCommand): PlayLogger
