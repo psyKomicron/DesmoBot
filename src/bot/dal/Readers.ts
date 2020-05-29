@@ -6,42 +6,17 @@ export interface YoutubeAPIKey
     key: string;
 }
 
-export class TokenReader
+export interface StreamOptions
 {
-    public static getToken(): string 
-    {
-        let token = "";
-        try {
-            token = fs.readFileSync("./node_modules/token.txt", "UTF-8");
-        } catch (e) {
-            try
-            {
-                token = process.env.token;
-                if (!token) throw new TypeError(`"token" env variable does not exists`);
-            }
-            catch (error)
-            {
-                if (error instanceof TypeError)
-                {
-                    console.error("Could not get token from file :\n"+ Printer.error(e) + "\n or env variable : \n" + Printer.warn(error.message));
-                }
-                else console.error(error);
-                token = "";
-            }
-        }
-        return token;
-    }
-
-    public static getYoutubeAPIKey(): YoutubeAPIKey
-    {
-        let token = "";
-        token = process.env.API_key;
-        if (!token)
-        {
-            console.log(Printer.warn(`"API_key" env variable does not exists`));
-        }
-        return { key: token };
-    }
+    flags?: string;
+    encoding?: string;
+    fd?: number;
+    mode?: number;
+    autoClose?: boolean;
+    emitClose?: boolean;
+    start?: number;
+    end?: number;
+    highWaterMark?: number;
 }
 
 export class FileSystem
@@ -85,6 +60,11 @@ export class FileSystem
     {
         return fs.statSync(path);
     }
+
+    public static createReadStream(path: string, opt: string | StreamOptions): fs.ReadStream
+    {
+        return fs.createReadStream(path, opt);
+    }
 }
 
 export class EmojiReader
@@ -94,7 +74,7 @@ export class EmojiReader
         let res = undefined;
         try
         {
-            let json = JSON.parse(FileSystem.readFile("./src/bot/emojis/emojis.json").toString());
+            let json = JSON.parse(FileSystem.readFile("./files/emojis/emojis.json").toString());
             let emojis = json["emojis"];
             for (var i = 0; i < emojis.length; i++)
             {
@@ -116,5 +96,45 @@ export class EmojiReader
             }
         }
         return res;
+    }
+}
+
+export class TokenReader
+{
+    public static getToken(): string 
+    {
+        let token = "";
+        try
+        {
+            token = fs.readFileSync("./node_modules/token.txt", "UTF-8");
+        } catch (e)
+        {
+            try
+            {
+                token = process.env.token;
+                if (!token) throw new TypeError(`"token" env variable does not exists`);
+            }
+            catch (error)
+            {
+                if (error instanceof TypeError)
+                {
+                    console.error("Could not get token from file :\n" + Printer.error(e) + "\n or env variable : \n" + Printer.warn(error.message));
+                }
+                else console.error(error);
+                token = "";
+            }
+        }
+        return token;
+    }
+
+    public static getYoutubeAPIKey(): YoutubeAPIKey
+    {
+        let token = "";
+        token = process.env.API_key;
+        if (!token)
+        {
+            console.log(Printer.warn(`"API_key" env variable does not exists`));
+        }
+        return { key: token };
     }
 }
