@@ -1,25 +1,30 @@
+import ytld = require('ytdl-core');
 import { Bot } from "../../Bot";
 import { Command } from "../Command";
 import { Printer } from "../../../console/Printer";
+import { PlayLogger } from "../logger/loggers/PlayLogger";
 import { EmbedFactory } from "../factory/EmbedFactory";
-import { YoutubeModule } from "./explore/youtube/YoutubeModule";
+import { YoutubeModule, SearchResults } from "./explore/youtube/YoutubeModule";
 import { CommandSyntaxError } from "../../errors/customs/CommandSyntaxError";
 import { WrongArgumentError } from "../../errors/customs/WrongArgumentError";
-import { TokenReader, EmojiReader } from "../../dal/Readers";
-import { Message, VoiceChannel, VoiceConnection } from "discord.js";
-import { PlayLogger } from "../logger/loggers/PlayLogger";
+import { TokenReader, EmojiReader, FileSystem as fs } from "../../dal/Readers";
+import { Message, MessageEmbed, EmbedField , VoiceChannel, VoiceConnection, StreamDispatcher } from "discord.js";
 
 export class PlayCommand extends Command
 {
     private connection: VoiceConnection;
+    private dispacher: StreamDispatcher;
     private voiceChannel: VoiceChannel;
-    private videoUrl: string;
+    private videos: Array<string> = new Array();
+    private currentVideo: number = 0;
     private _channelID: string;
 
     public constructor(message: Message, bot: Bot)
     {
         super("play-command", message, bot);
-        this.getParams(this.parseMessage());
+        let params = this.getParams(this.parseMessage());
+        this.videos = params.videos;
+        this._channelID = params.channelID;
     }
 
     public get channel(): VoiceChannel { return this.voiceChannel; }
@@ -31,13 +36,20 @@ export class PlayCommand extends Command
         console.log(Printer.title("play"));
         console.log(Printer.args(["value provided", "? channel id"],
             [
-                this.videoUrl == undefined ? "" : this.videoUrl,
+                this.videos.length == 0 ? "" : `${this.videos.length}`,
                 this._channelID == undefined ? "" : this._channelID
             ]));
         // check values
-        if (this.videoUrl && this.videoUrl.match(/(https:\/\/www.youtube.com\/watch\?v=+)/g))
+        let match = true;
+        this.videos.forEach(url =>
         {
-            this.message.reply("Playing :\n" + this.videoUrl);
+            if (!url.match(/(https:\/\/www.youtube.com\/watch\?v=+)/g))
+            {
+                match = false;
+            }
+        })
+        if (this.videos.length > 0 && match)
+        {
             if (this._channelID)
             {
                 let channel = this.resolveChannel(this._channelID);
@@ -48,26 +60,24 @@ export class PlayCommand extends Command
             }
             else
             {
-                // get user channel
                 this.voiceChannel = this.message.member.voice.channel;
             }
             if (this.voiceChannel)
             {
-                this.connection = await this.join();
-                this.bot.logger.addLogger(new PlayLogger().logPlayer(this));
-                setTimeout(() =>
-                {
-                    this.disconnect();
-                }, 60000)
+                this.playStream();
             }
-            console.log(Printer.info("Joined " + this.voiceChannel?.name));
         }
-        else if (this.videoUrl)
+        // else if value provided (-u) isn't a youtube url
+        else if (this.videos)
         {
             console.log("Searching for the keyword");
             let youtube = new YoutubeModule(TokenReader.getYoutubeAPIKey());
-            let results = await youtube.searchVideos(this.videoUrl, 20, "en");
-            if (results.items.length > 0)
+            let results = new Array<SearchResults>();
+            for (var k = 0; k < this.videos.length; k++)
+            {
+                await youtube.searchVideos(this.videos[i], 20, "en");
+            }
+            if (results.length > 0)
             {
                 let embed = EmbedFactory.build({
                     color: 16711680,
@@ -75,19 +85,48 @@ export class PlayCommand extends Command
                     footer: "powered by psyKomicron",
                     title: "Videos"
                 });
-                let items = results.items;
-                for (var i = 0; i < items.length; i++)
+                let embedFields = new Array<EmbedField>();
+                for (var l = 0; l < results.length; l++)
                 {
-                    let name = `${i + 1}`.split("");
-                    let num = "";
-                    for (var j = 0; j < name.length; j++)
+                    let items = results[l].items;
+                    for (var i = 0; i < items.length; i++)
                     {
-                        let index = Number.parseInt(name[j]);
-                        num += EmojiReader.getEmoji(index);
+                        let name = `${i + 1}`.split("");
+                        let num = "";
+                        for (var j = 0; j < name.length; j++)
+                        {
+                            let index = Number.parseInt(name[j]);
+                            num += EmojiReader.getEmoji(index);
+                        }
+                        embedFields.push((
+                            {
+                                name: `${num} - ${items[i].title}`,
+                                value: items[i].videoURL,
+                                inline: false
+                            }));
                     }
-                    embed.addField(`${num} - ${items[i].title}`, items[i].videoURL);
                 }
-                this.message.reply(embed);
+                // try to merge embeds
+                let embeds = new Array<MessageEmbed>();
+                for (var m = 0; m < embedFields.length; m++)
+                {
+                    if ((m % 25) == 0)
+                    {
+                        embeds.push(embed);
+                        embed = EmbedFactory.build({
+                            color: 16711680,
+                            description: "Choose wich video to play",
+                            footer: "powered by psyKomicron",
+                            title: "Videos"
+                        });
+                    }
+                    embed.addField(embedFields[i].name, embedFields[i].value, embedFields[i].inline);
+                }
+                this.message.reply(embeds[0]);
+                for (var n = 1; n < embeds.length; n++)
+                {
+                    this.message.channel.send(embeds[n]);
+                }
             }
             else
             {
@@ -98,26 +137,6 @@ export class PlayCommand extends Command
         {
             throw new CommandSyntaxError(this);
         }
-    }
-
-    private getParams(args: Map<string, string>)
-    {
-        args.forEach((v, k) =>
-        {
-            switch (k)
-            {
-                case "u":
-                case "url":
-                    this.videoUrl = v;
-                    break;
-                case "c" :
-                case "channel":
-                    this._channelID = v;
-                    break;
-                default:
-                    throw new CommandSyntaxError(this);
-            }
-        })
     }
 
     public async join(): Promise<VoiceConnection>
@@ -134,7 +153,96 @@ export class PlayCommand extends Command
     {
         if (this.connection)
         {
+            this.dispacher.end();
             this.connection.disconnect();
         }
     }
+
+    public addToPlaylist(message: Message): void
+    {
+        let params = this.getParams(this.parseMessage(message));
+        params.videos.forEach(video =>
+        {
+            if (video.match(/(https:\/\/www.youtube.com\/watch\?v=+)/g))
+            {
+                this.videos.push(video);
+            }
+        });
+    }
+
+    private async playStream(index: number = 0)
+    {
+        this.connection = await this.join();
+        this.bot.logger.addLogger(new PlayLogger().logPlayer(this));
+        try
+        {
+            this.dispacher = this.connection.play(ytld(this.videos[index], { quality: "highestaudio" }));
+            this.dispacher.on("error", (error) =>
+            {
+                console.error(error);
+                this.disconnect();
+                this.message.reply("Uh oh... something broke !");
+            });
+            this.dispacher.on("start", (error) =>
+            {
+                this.message.channel.send(EmbedFactory.build({
+                    color: 16711680,
+                    description: this.videos[index],
+                    footer: "powered by psyKomicron",
+                    title: "Playing"
+                }));
+            });
+            this.dispacher.on("close", () =>
+            {
+                console.log(Printer.info("closing"))
+            });
+            this.dispacher.on("speaking", (speaking) =>
+            {
+                if (!speaking)
+                {
+                    this.playNext();
+                }
+            });
+        } catch (error)
+        {
+            console.log(error);
+        }
+    }
+
+    public playNext(): void
+    {
+        if (this.videos.length > 0 && this.currentVideo + 1 < this.videos.length)
+        {
+            this.currentVideo++;
+            this.playStream(this.currentVideo);
+        }
+    }
+
+    private getParams(args: Map<string, string>): Params
+    {
+        let params: Params = {channelID: "", videos: new Array<string>()};
+        args.forEach((v, k) =>
+        {
+            switch (k)
+            {
+                case "u":
+                case "url":
+                    params.videos.push(v);
+                    break;
+                case "c":
+                case "channel":
+                    params.channelID = v;
+                    break;
+                default:
+                    throw new CommandSyntaxError(this);
+            }
+        });
+        return params;
+    }
+}
+
+interface Params
+{
+    channelID: string;
+    videos: Array<string>
 }
