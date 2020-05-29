@@ -94,11 +94,7 @@ export class DownloadCommand extends Command
                     copyArray.push(urls[i]);
                 }
             }
-            downloader.download(copyArray)
-                .then((message) =>
-                {
-                    console.log(message);
-                });
+            downloader.download(copyArray);
         }
     }
 
