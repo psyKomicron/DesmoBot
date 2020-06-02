@@ -1,14 +1,17 @@
 import { Logger } from "../Logger";
 import { Message } from "discord.js";
-import { Printer } from "../../../../console/Printer";
 
 export class DefaultLogger extends Logger
 {
+    public constructor()
+    {
+        super("default-logger");
+    }
+
     public handle(message: Message): boolean 
     {
         if (this.next)
         {
-            console.log(Printer.title("handlers"));
             return this.next.handle(message);
         }
         else
