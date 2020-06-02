@@ -25,10 +25,10 @@ export class EmbedFactory
 
 export interface EmbedFactoryResolvable
 {
-    author?: User;
     color: number;
     description: string;
     footer: string;
     title: string;
     fields?: Array<EmbedField>;
+    author?: User;
 }
