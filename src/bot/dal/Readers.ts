@@ -65,6 +65,11 @@ export class FileSystem
     {
         return fs.createReadStream(path, opt);
     }
+
+    public static createWriteStream(path: string, opt: StreamOptions | string): fs.WriteStream
+    {
+        return fs.createWriteStream(path, opt);
+    }
 }
 
 export class EmojiReader
