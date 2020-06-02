@@ -1,8 +1,9 @@
 import { FileSystem as fs } from "../dal/Readers";
 import { Message, TextChannel, GuildChannel} from 'discord.js';
 import { Bot } from "../Bot";
+import { EventEmitter } from "events";
 
-export abstract class Command
+export abstract class Command extends EventEmitter
 {
     private static _commands: number = 0;
     private readonly _bot: Bot;
@@ -11,6 +12,7 @@ export abstract class Command
 
     protected constructor(name: string, message: Message, bot: Bot)
     {
+        super();
         Command._commands++;
         this._bot = bot;
         this._message = message;
@@ -30,11 +32,11 @@ export abstract class Command
 
 
     /**Delete the command message (here to avoid code redundancy) */
-    public deleteMessage(): void
+    public deleteMessage(timeout: number = 100): void
     {
         if (this.message && this.message.deletable)
         {
-            this.message.delete();
+            this.message.delete({ timeout: timeout });
         }
     }
 
