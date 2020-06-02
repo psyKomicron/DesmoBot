@@ -1,56 +1,116 @@
-import Discord = require('discord.js');
+import ytdl = require('ytdl-core');
 import { Command } from "../Command";
 import { Printer } from '../../../console/Printer';
-import { FileType, Bot } from '../../Bot';
-import { EmojiReader } from '../../dal/Readers';
-import { ProgressBar } from '../../../console/effects/ProgressBar';
 import { Downloader } from '../../../network/Downloader';
+import { ProgressBar } from '../../../console/effects/ProgressBar';
+import { EmbedFactory } from '../factory/EmbedFactory';
+import { FileType, Bot } from '../../Bot';
+import { WrongArgumentError } from "../../errors/customs/WrongArgumentError";
+import { CommandSyntaxError } from '../../errors/customs/CommandSyntaxError';
+import { EmojiReader, FileSystem as fs } from '../../dal/Readers';
+import { Channel, Message, TextChannel, Snowflake, Collection } from 'discord.js';
 
 export class DownloadCommand extends Command
 {
-    private downloadValues: [number, FileType, Discord.Channel, number];
+    private values: Params;
 
-    public constructor(message: Discord.Message, bot: Bot)
+    public constructor(message: Message, bot: Bot)
     {
         super("download", message, bot);
-        this.downloadValues = this.getParams(this.parseMessage());
+        this.values = this.getParams(this.parseMessage());
     }
 
     public async execute(): Promise<void> 
     {
-        let limit = this.downloadValues[0];
-        if (limit < 0) return Promise.reject(new Error("Given limit is not integer"));
-        let type = this.downloadValues[1];
-        let channel = this.downloadValues[2];
-        let name = "";
-        if (channel instanceof Discord.TextChannel)
-            name = channel.name;
-        this.message.react(EmojiReader.getEmoji("thinking"));
-        console.log(Printer.title("initiating download"));
-        console.log(Printer.args(
-            ["downloading", "file type", "channel"],
-            [`${limit}`, `${type}`, `${name}`]
-        ));
-        if (limit > 250)
+        if (!this.values.directDownload)
         {
-            console.log(Printer.warn("\n\t/!\\ WARNING : downloading over 250 files can fail /!\\ \n"));
-            this.message.react(EmojiReader.getEmoji("warning"));
-        }
-        this.initiateDownload(limit, channel)
-            .then(() =>
+            let limit = this.values.limit;
+            if (limit < 0)
             {
-                this.message.react(EmojiReader.getEmoji("green_check"));
-                if (this.message.deletable) this.message.delete({ timeout: 2000 });
-            });
+                return Promise.reject(new Error("Given limit is not integer"));
+            }
+            let type = this.values.type;
+            let channel = this.values.channel;
+            let name = "";
+            if (channel instanceof TextChannel)
+            {
+                name = channel.name;
+            }
+            this.message.react(EmojiReader.getEmoji("thinking"));
+            console.log(Printer.title("initiating download"));
+            console.log(Printer.args(
+                ["downloading", "file type", "channel"],
+                [`${limit}`, `${type}`, `${name}`]
+            ));
+            if (limit > 250)
+            {
+                console.log(Printer.warn("\n\t/!\\ WARNING : downloading over 250 files can fail /!\\ \n"));
+                this.message.react(EmojiReader.getEmoji("warning"));
+            }
+            this.initiateDownload(limit, channel)
+                .then(() =>
+                {
+                    this.message.react(EmojiReader.getEmoji("green_check"));
+                    if (this.message.deletable) this.message.delete({ timeout: 2000 });
+                });
+        }
+        else
+        {
+            if (this.values.directDownloadURI)
+            {
+                console.log(Printer.title("downloading"));
+                console.log(Printer.args(
+                    ["downloading"],
+                    [`${this.values.directDownloadURI}`]
+                ));
+                try
+                {
+                    this.message.react(EmojiReader.getEmoji("thinking"));
+                    ytdl(this.values.directDownloadURI, { quality: "highestaudio" })
+                        .pipe(fs.createWriteStream("./files/downloads/file.mp3", { flags: "w" }))
+                            .on("finish", () =>
+                            {
+                                console.log("Finished downloading file");
+                                this.message.react(EmojiReader.getEmoji("green_check"));
+                                this.deleteMessage(3000);
+                                let embed = EmbedFactory.build({
+                                    color: 16711680,
+                                    description: "Video",
+                                    footer: "powered by psyKomicron",
+                                    title: "Youtube"
+                                });
+                                embed.attachFiles([{ attachment: fs.readFile("./files/downloads/file.mp3"), name: "file.mp3" }]);
+                                // cannot be sent if the bot hasn't Nitro
+                                /*this.message.channel.send(embed)
+                                    .catch(error =>
+                                    {
+                                        console.error(error);
+                                    });*/
+                            })
+                            .on("error", (error) =>
+                            {
+                                throw error;
+                            });
+                } catch (error)
+                {
+                    this.message.react(EmojiReader.getEmoji("red_cross"));
+                    console.error(error);
+                }
+            }
+            else
+            {
+                throw new WrongArgumentError(this, "No URI were provided");
+            }
+        }
     }
 
-    private async initiateDownload(numberOfFiles: number, channel: Discord.Channel): Promise<void>
+    private async initiateDownload(numberOfFiles: number, channel: Channel): Promise<void>
     {
-        let lastMessageID: Discord.Snowflake = null;
+        let lastMessageID: Snowflake = null;
 
         let limit = numberOfFiles > 100 ? 100 : numberOfFiles;
         let totalDownloads: number = 0;
-        if (channel instanceof Discord.TextChannel)
+        if (channel instanceof TextChannel)
         {
             let messages = await channel.messages.fetch({ limit: limit });
             let filteredMessages = this.filterMessages(messages);
@@ -98,7 +158,7 @@ export class DownloadCommand extends Command
         }
     }
 
-    private hydrateUrls(urls: Array<string>, type: FileType = this.downloadValues[1]): Array<string>
+    private hydrateUrls(urls: Array<string>, type: FileType = this.values.type): Array<string>
     {
         let filteredUrls = new Array();
         urls.forEach(url =>
@@ -118,7 +178,7 @@ export class DownloadCommand extends Command
      * @param messages messages to filter
      * @param type filter for the messages
      */
-    private filterMessages(messages: Discord.Collection<string, Discord.Message>, type: FileType = FileType.IMG): Array<string>
+    private filterMessages(messages: Collection<string, Message>, type: FileType = FileType.IMG): Array<string>
     {
         let filteredArray = new Array<string>();
         messages.forEach((message, flake) =>
@@ -137,12 +197,15 @@ export class DownloadCommand extends Command
                 {
                     let regex =
                         /(https?: \/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
-                    let url = content.match(regex);
-                    if (url != undefined)
+                    let urls = content.match(regex);
+                    if (urls != undefined)
                     {
-                        if (this.isImage(url[0]))
+                        for (var i = 0; i < urls.length; i++)
                         {
-                            filteredArray.push(url[0]);
+                            if (this.isImage(urls[i]))
+                            {
+                                filteredArray.push(urls[i]);
+                            }
                         }
                     }
                 }
@@ -156,12 +219,13 @@ export class DownloadCommand extends Command
      * this.initiateDownload method.
      * @param command content to parse (usually a message content)
      */
-    private getParams(map: Map<string, string>): [number, FileType, Discord.Channel, number]
+    private getParams(map: Map<string, string>): Params
     {
         let limit = 50;
         let type = FileType.IMG;
-        let channel: Discord.Channel = this.message.channel;
-        let timeout: number;
+        let channel: Channel = this.message.channel;
+        let directDownload: boolean = false;
+        let directDownloadURI: string;
         map.forEach((value, key) =>
         {
             switch (key)
@@ -181,16 +245,22 @@ export class DownloadCommand extends Command
                         channel = this.resolveTextChannel(value);
                     }
                     break;
-                case "s":
-                    if (!Number.isNaN(Number.parseInt(value)))
-                    {
-                        timeout = Number.parseInt(value);
-                    }
+                case "v":
+                case "video":
+                    directDownload = true;
+                    directDownloadURI = value;
                     break;
                 default:
+                    throw new CommandSyntaxError(this);
             }
         });
-        return [limit, type, channel, timeout];
+        return {
+            limit: limit,
+            type: type,
+            channel: channel,
+            directDownload: directDownload,
+            directDownloadURI: directDownloadURI
+        };
     }
 
     private isImage(content: string)
@@ -203,15 +273,6 @@ export class DownloadCommand extends Command
             Downloader.getFileName(content).endsWith(".bmp") ||
             Downloader.getFileName(content).endsWith(".BMP") ||
             Downloader.getFileName(content).endsWith(".GIF"));
-    }
-
-    /**
-     * Uses regex to id a uri in a string
-     * @param content
-     */
-    private extractImage(content: string): string
-    {
-        return "";
     }
 
     private getFileType(name: string): FileType
@@ -239,4 +300,14 @@ export class DownloadCommand extends Command
         }
         return type;
     }
+}
+
+interface Params
+{
+    limit: number;
+    type: FileType;
+    channel: Channel;
+    directDownload: boolean;
+    directDownloadURI: string;
+    timeout?: number;
 }
