@@ -129,6 +129,7 @@ export class VoteCommand extends Command
                 });
                 collector.on('end', () =>
                 {
+                    this.emit("end");
                     this.voteMessage.edit("**Vote ended !**");
                     let embed = new Discord.MessageEmbed()
                         .setColor(this.messageEmbed.color)
