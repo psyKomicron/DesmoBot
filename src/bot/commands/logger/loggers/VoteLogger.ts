@@ -2,20 +2,26 @@ import { VoteCommand } from "../../commands/VoteCommand";
 import { Logger } from "../Logger";
 import { Message } from "discord.js";
 import { EmojiReader } from "../../../dal/Readers";
+import { Printer } from "../../../../console/Printer";
 
 export class VoteLogger extends Logger
 {
     private vote: VoteCommand;
     private voteID: number;
 
+    public constructor()
+    {
+        super("vote-logger");
+    }
+
     public handle(message: Message): boolean 
     {
         let can: boolean;
-        let split = message.content.split(" ");
-        if (message.content.substr(1, 3) == "end" && split.length > 0 && split[1] == `${this.voteID}`)
+        if (message.content.substr(1, 3) == "end" && this.isID(message))
         {
             can = true;
             this.work(message);
+            console.log(Printer.title("handled by vote logger"));
         }
         else
         {
@@ -60,7 +66,29 @@ export class VoteLogger extends Logger
         let id = this.hash(vote.title);
         this.vote = vote;
         this.voteID = id;
+        this.logCommand(vote);
         return id;
+    }
+
+    private isID(message: Message): boolean
+    {
+        let index = message.content.split(" ")[1];
+        if (!Number.isNaN(Number.parseInt(index)))
+        {
+            let value: number;
+            try 
+            {
+                value = Number.parseInt(index);
+                if (value)
+                {
+                    return value == this.voteID;
+                }
+            } catch (error) 
+            {
+                return false;
+            }
+        }
+        return false;
     }
 
     /**
@@ -70,7 +98,14 @@ export class VoteLogger extends Logger
      */
     private end(key: number): void
     {
-        this.vote.end("User input");
+        if (key == this.voteID)
+        {
+            this.vote.end("User input");
+        }
+        else
+        {
+            throw new RangeError("Key not matching");
+        }
     }
 
     /**
