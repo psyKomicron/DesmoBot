@@ -1,4 +1,4 @@
-import ytld = require('ytdl-core');
+import ytdl = require('ytdl-core');
 import { Bot } from "../../Bot";
 import { Command } from "../Command";
 import { Printer } from "../../../console/Printer";
@@ -8,7 +8,13 @@ import { YoutubeModule, SearchResults } from "./explore/youtube/YoutubeModule";
 import { CommandSyntaxError } from "../../errors/customs/CommandSyntaxError";
 import { WrongArgumentError } from "../../errors/customs/WrongArgumentError";
 import { TokenReader, EmojiReader, FileSystem as fs } from "../../dal/Readers";
-import { Message, MessageEmbed, EmbedField , VoiceChannel, VoiceConnection, StreamDispatcher } from "discord.js";
+import
+    {
+        Message, MessageEmbed,
+        VoiceChannel, VoiceConnection,
+        StreamDispatcher,
+        EmbedField
+    } from "discord.js";
 
 export class PlayCommand extends Command
 {
@@ -17,29 +23,33 @@ export class PlayCommand extends Command
     private voiceChannel: VoiceChannel;
     private videos: Array<string> = new Array();
     private currentVideo: number = 0;
-    private _channelID: string;
 
     public constructor(message: Message, bot: Bot)
     {
         super("play-command", message, bot);
-        let params = this.getParams(this.parseMessage());
-        this.videos = params.videos;
-        this._channelID = params.channelID;
+        if (!this.message.content.match(/([-])/g))
+        {
+            // call to parseMessage() to log the command
+            this.parseMessage();
+            this.videos = this.getSimpleParams(message.content).videos;
+        }
+        else
+        {
+            let params = this.getParams(this.parseMessage());
+            this.voiceChannel = params.channel;
+            this.videos = params.videos;
+        }
     }
 
     public get channel(): VoiceChannel { return this.voiceChannel; }
 
-    public get channelID(): string { return this._channelID; }
-
     public async execute(): Promise<void> 
     {
         console.log(Printer.title("play"));
-        console.log(Printer.args(["value provided", "? channel id"],
+        console.log(Printer.args(["value provided"],
             [
                 this.videos.length == 0 ? "" : `${this.videos.length}`,
-                this._channelID == undefined ? "" : this._channelID
             ]));
-        // check values
         let match = true;
         this.videos.forEach(url =>
         {
@@ -50,32 +60,23 @@ export class PlayCommand extends Command
         })
         if (this.videos.length > 0 && match)
         {
-            if (this._channelID)
-            {
-                let channel = this.resolveChannel(this._channelID);
-                if (channel instanceof VoiceChannel)
-                {
-                    this.voiceChannel = channel;
-                }
-            }
-            else
-            {
-                this.voiceChannel = this.message.member.voice.channel;
-            }
+            this.voiceChannel = this.voiceChannel == undefined ? this.message.member.voice.channel : this.voiceChannel;
             if (this.voiceChannel)
             {
                 this.playStream();
             }
+            else
+            {
+                throw new WrongArgumentError(this, "No channel to connect to was provided");
+            }
         }
-        // else if value provided (-u) isn't a youtube url
         else if (this.videos)
         {
-            console.log("Searching for the keyword");
             let youtube = new YoutubeModule(TokenReader.getYoutubeAPIKey());
             let results = new Array<SearchResults>();
             for (var k = 0; k < this.videos.length; k++)
             {
-                await youtube.searchVideos(this.videos[i], 20, "en");
+                await youtube.searchVideos(this.videos[i], 30, "en");
             }
             if (results.length > 0)
             {
@@ -106,7 +107,6 @@ export class PlayCommand extends Command
                             }));
                     }
                 }
-                // try to merge embeds
                 let embeds = new Array<MessageEmbed>();
                 for (var m = 0; m < embedFields.length; m++)
                 {
@@ -115,7 +115,7 @@ export class PlayCommand extends Command
                         embeds.push(embed);
                         embed = EmbedFactory.build({
                             color: 16711680,
-                            description: "Choose wich video to play",
+                            description: "Rest of the videos",
                             footer: "powered by psyKomicron",
                             title: "Videos"
                         });
@@ -149,7 +149,7 @@ export class PlayCommand extends Command
         return promise;
     }
 
-    public disconnect(): void
+    public leave(): void
     {
         if (this.connection)
         {
@@ -160,8 +160,8 @@ export class PlayCommand extends Command
 
     public addToPlaylist(message: Message): void
     {
-        let params = this.getParams(this.parseMessage(message));
-        params.videos.forEach(video =>
+        let videos = this.getSimpleParams(message.content).videos;
+        videos.forEach(video =>
         {
             if (video.match(/(https:\/\/www.youtube.com\/watch\?v=+)/g))
             {
@@ -170,20 +170,45 @@ export class PlayCommand extends Command
         });
     }
 
+    public pause(): void
+    {
+        if (!this.dispacher.paused)
+        {
+            this.dispacher.pause(true);
+        }
+    }
+
+    public resume(): void
+    {
+        if (this.dispacher.paused)
+        {
+            this.dispacher.resume();
+        }
+    }
+
+    public next(): void
+    {
+        if (this.videos.length > 0 && this.currentVideo + 1 < this.videos.length)
+        {
+            this.currentVideo++;
+            this.playStream(this.currentVideo);
+        }
+    }
+
     private async playStream(index: number = 0)
     {
         this.connection = await this.join();
         this.bot.logger.addLogger(new PlayLogger().logPlayer(this));
         try
         {
-            this.dispacher = this.connection.play(ytld(this.videos[index], { quality: "highestaudio" }));
+            this.dispacher = this.connection.play(ytdl(this.videos[index], { quality: "highestaudio" }));
             this.dispacher.on("error", (error) =>
             {
                 console.error(error);
-                this.disconnect();
+                this.leave();
                 this.message.reply("Uh oh... something broke !");
             });
-            this.dispacher.on("start", (error) =>
+            this.dispacher.on("start", () =>
             {
                 this.message.channel.send(EmbedFactory.build({
                     color: 16711680,
@@ -194,13 +219,14 @@ export class PlayCommand extends Command
             });
             this.dispacher.on("close", () =>
             {
-                console.log(Printer.info("closing"))
+                this.dispacher.end();
+                this.emit("end");
             });
             this.dispacher.on("speaking", (speaking) =>
             {
                 if (!speaking)
                 {
-                    this.playNext();
+                    this.next();
                 }
             });
         } catch (error)
@@ -209,40 +235,53 @@ export class PlayCommand extends Command
         }
     }
 
-    public playNext(): void
+    private getSimpleParams(content: string): Params
     {
-        if (this.videos.length > 0 && this.currentVideo + 1 < this.videos.length)
+        let params = new Array<string>();
+        let values = content.split(" ");
+        values.forEach(v =>
         {
-            this.currentVideo++;
-            this.playStream(this.currentVideo);
-        }
+            if (v.match(/(https:\/\/www.youtube.com\/watch\?v=+)/g))
+            {
+                params.push(v);
+            }
+        });
+        return { videos: params };
     }
 
     private getParams(args: Map<string, string>): Params
     {
-        let params: Params = {channelID: "", videos: new Array<string>()};
-        args.forEach((v, k) =>
+        let videos = new Array<string>();
+        let channel: VoiceChannel;
+        args.forEach((v, k) => 
         {
             switch (k)
             {
                 case "u":
-                case "url":
-                    params.videos.push(v);
+                    let urls = v.split(" ");
+                    for (let i = 0; i < urls.length; i++)
+                    {
+                        if (v.match(/(https:\/\/www.youtube.com\/watch\?v=+)/g))
+                        {
+                            videos.push(v);
+                        }
+                    }
                     break;
                 case "c":
-                case "channel":
-                    params.channelID = v;
-                    break;
+                    let c = this.resolveChannel(v);
+                    if (c && c instanceof VoiceChannel)
+                    {
+                        channel = c;
+                    }
                 default:
-                    throw new CommandSyntaxError(this);
             }
         });
-        return params;
+        return { videos: videos, channel: channel };
     }
 }
 
 interface Params
 {
-    channelID: string;
+    channel?: VoiceChannel;
     videos: Array<string>
 }
