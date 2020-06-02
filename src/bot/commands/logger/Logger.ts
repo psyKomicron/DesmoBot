@@ -1,9 +1,16 @@
 import { Message } from "discord.js";
+import { Command } from '../Command';
 
 export abstract class Logger
 {
+    private readonly name;
     private _next: Logger;
     private _previous: Logger;
+
+    protected constructor(name: string)
+    {
+        this.name = name;
+    }
 
     public abstract handle(message: Message): boolean;
 
@@ -34,11 +41,20 @@ export abstract class Logger
         return this;
     }
 
-    protected get next(): Logger { return this._next; }
+    public get next(): Logger { return this._next; }
 
-    protected set next(value: Logger) { this._next = value; }
+    public set next(value: Logger) { this._next = value; }
 
-    protected get previous(): Logger { return this._previous; }
+    public get previous(): Logger { return this._previous; }
 
-    protected set previous(value: Logger) { this._previous = value; }
+    public set previous(value: Logger) { this._previous = value; }
+
+    protected logCommand(command: Command): void
+    {
+        command.addListener("end", () =>
+        {
+            this.disconnect();
+            console.log(`successfully disconnected ${this.name}`);
+        });
+    }
 }
