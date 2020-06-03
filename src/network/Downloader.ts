@@ -1,6 +1,5 @@
-import fs = require('fs');
 import request = require('request');
-import { Printer } from '../console/Printer';
+import { FileSystem as fs } from '../bot/dal/Readers';
 import { ProgressBar } from '../console/effects/ProgressBar';
 
 export class Downloader
@@ -12,9 +11,9 @@ export class Downloader
         if (directory != "." && directory != "..")
         {
             this._path = `./files/downloads/${directory}/`;
-            if (!fs.existsSync(this.path))
+            if (!fs.exists(this.path))
             {
-                fs.mkdirSync(this.path, { recursive: true });
+                fs.mkdir(this.path, true);
             }
         }
     }
@@ -22,32 +21,63 @@ export class Downloader
     public async download(urls: Array<string>): Promise<void>
     {
         let names = new Array<string>();
-        for (let i = 0; i < urls.length; i++)
+        for (var j = 0; j < urls.length; j++)
         {
-            names.push(Downloader.getFileName(urls[i]));
+            names.push(Downloader.getFileName(urls[j]));
         }
         names = this.renameFiles(names);
         let bar = new ProgressBar(urls.length, "downloading");
         bar.start();
-        for (let i = 0; i < urls.length; i++)
+        for (var i = 0; i < urls.length; i++)
         {
+            if (urls[i] == undefined)
+            {
+                throw new Error("url at index " + i + "was undefined");
+            }
             let path = this.path + names[i];
-            let file = await fs.createWriteStream(path);
+            let file = fs.createWriteStream(path, { flags: "w" });
             bar.update(i + 1);
-            let req = await request.get(urls[i]);
+            let req = request.get(urls[i]);
             req.on("response", (response) =>
             {
-                if (response.statusCode !== 200) console.error(Printer.error(`status code is ${response.statusCode}`));
+                if (response.statusCode > 300 && response.statusCode < 600)
+                {
+                    let code = response.statusCode;
+                    console.log(`${urls[i]}`);
+                    switch (code)
+                    {
+                        case 400:
+                            console.log(`[${code}] Bad Request !`);
+                            break;
+                        case 403:
+                            console.log(`[${code}] Forbidden !`);
+                            break;
+                        case 409:
+                            console.log(`[${code}] Conflict !`);
+                            break;
+                        case 401:
+                            console.log(`[${code}] Unauthorized !`);
+                            break;
+                        case 404:
+                            console.log(`[${code}] Not Found !`);
+                            break;
+                        case 500:
+                            console.log(`[${code}] Internal Server Error !`);
+                            break;
+                        default:
+                            console.log(code);
+                    }
+                }
             });
 
             req.on("error", err =>
             {
-                console.error(`${Printer.error(names[i])} -> ${err})`);
-                fs.appendFileSync(`${this.path}/logs.txt`, names[i] + " -> error ");
-                fs.unlinkSync(path);
+                console.error(names[i] + " " + err);
+                fs.appendFile(`${this.path}/logs.txt`, names[i] + " -> error ");
+                fs.unlink(path);
             });
 
-            await req.pipe(file);
+            req.pipe(file);
 
             file.on("finish", () =>
             {
@@ -55,20 +85,23 @@ export class Downloader
             });
             file.on("error", err =>
             {
-                fs.unlinkSync(path);
+                fs.unlink(path);
                 throw err;
             });
         }
+        bar.stop();
+        let downloadedItems = "";
         urls.forEach(url =>
         {
-            fs.appendFileSync(this.path + "logs.txt", `${url}\n`);
+            downloadedItems += url + "\n";
         });
+        fs.appendFile(this.path + "logs.txt", `${downloadedItems}\n`)
     }
 
     private renameFiles(names: Array<string>): Array<string>
     {
         let map = new Map<string, boolean>();
-        for (let i = 0; i < names.length; i++)
+        for (var i = 0; i < names.length; i++)
         {
             if (!map.get(names[i]))
             {
@@ -79,14 +112,14 @@ export class Downloader
                 let old_name = names[i];
                 let current_name = old_name.split(".")[0];
                 let ext = "." + old_name.split(".")[1];
-                let n: number = 1;
+                let n = 1;
                 while (map.get(current_name + ext)) // change the name
                 {
                     let temp_name = current_name;
                     temp_name += `(${n})`;
                     if (!map.get(temp_name + ext))
                         current_name = temp_name;
-                    ++n;
+                   n++;
                 }
                 map.set(current_name + ext, true);
             }
