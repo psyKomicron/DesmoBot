@@ -26,7 +26,7 @@ export class FileSystem
         return fs.readFileSync(path);
     }
 
-    public static appendToFile(path: string, content: string): void
+    public static appendFile(path: string, content: string): void
     {
         fs.appendFileSync(path, content);
     }
@@ -114,18 +114,10 @@ export class TokenReader
             token = fs.readFileSync("./node_modules/token.txt", "UTF-8");
         } catch (e)
         {
-            try
+            token = process.env.token;
+            if (!token)
             {
-                token = process.env.token;
-                if (!token) throw new TypeError(`"token" env variable does not exists`);
-            }
-            catch (error)
-            {
-                if (error instanceof TypeError)
-                {
-                    console.error("Could not get token from file :\n" + Printer.error(e) + "\n or env variable : \n" + Printer.warn(error.message));
-                }
-                else console.error(error);
+                console.error("Could not get token from file :\n" + Printer.error(e) + "\n or env variable");
                 token = "";
             }
         }
