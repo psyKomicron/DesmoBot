@@ -3,6 +3,7 @@ import { Printer } from '../Printer';
 
 export class ProgressBar
 {
+    private lastValue: number;
     private max: number;
     private title: string;
     private started: boolean = false;
@@ -45,10 +46,30 @@ export class ProgressBar
             let round = Math.round((value / this.max) * 100);
             let border = round < 100 ? round : 100;
             readline.moveCursor(process.stdout, 1, -1);
-            let text = "";
-            for (let i = 0; i < border; i++)
-                text += "=";
-            process.stdout.write(`${Printer.info(text)} ${round}%\n`);
+            let progress = "";
+            for (var i = 0; i < border; i++)
+            {
+                progress += "=";
+            }
+            process.stdout.write(`${Printer.warn(progress)} ${Printer.normal(round)}%\n`);
+            this.lastValue = value;
+        }
+        else throw "Bar has not been started";
+    }
+
+    public stop(): void
+    {
+        if (this.started)
+        {
+            let round = Math.round((this.lastValue / this.max) * 100);
+            let border = round < 100 ? round : 100;
+            readline.moveCursor(process.stdout, 1, -1);
+            let progress = "";
+            for (var i = 0; i < border; i++)
+            {
+                progress += "=";
+            }
+            process.stdout.write(`${Printer.info(progress)} ${Printer.normal(round)}%\n`);
         }
         else throw "Bar has not been started";
     }
