@@ -144,6 +144,7 @@ export class DownloadCommand extends Command
                     }
                     reps++;
                 }
+                bar.stop();
             }
             let copyArray: Array<string> = new Array();
             let downloader = new Downloader(channel.name);
