@@ -1,6 +1,6 @@
 import { youtube_v3 } from 'googleapis';
 import { YoutubeAPIKey } from '../../../../dal/Readers';
-import { YoutubeAPIKeyError } from '../../../../errors/customs/YoutubeAPIKeyError';
+import { YoutubeAPIKeyError } from '../../../../errors/exec_errors/YoutubeAPIKeyError';
 
 export class YoutubeModule
 {

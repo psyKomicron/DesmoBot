@@ -1,23 +1,23 @@
-import Discord = require('discord.js');
 import readline = require('readline');
-import { Command } from "../Command";
 import { clearTimeout } from 'timers';
+import { Bot } from '../../Bot';
+import { Command } from "../Command";
 import { Printer } from '../../../console/Printer';
 import { ProgressBar } from '../../../console/effects/ProgressBar';
-import { Bot } from '../../Bot';
+import { Message, TextChannel, Collection } from 'discord.js';
 
 export class DeleteCommand extends Command
 {
-    private delete_values: [number, Discord.TextChannel, string];
+    private delete_values: [number, TextChannel, string];
 
-    public constructor(message: Discord.Message, bot: Bot)
+    public constructor(bot: Bot)
     {
-        super("delete", message, bot);
-        this.delete_values = this.getParams(this.parseMessage());
+        super("delete", bot);
     }
 
-    public async execute(): Promise<void> 
+    public async execute(message: Message): Promise<void> 
     {
+        this.delete_values = this.getParams(this.parseMessage(message), message);
         console.log(Printer.title("deleting messages"));
         if (this.delete_values[1] != undefined && this.delete_values[2] == "")
         {
@@ -53,9 +53,9 @@ export class DeleteCommand extends Command
         }
     }
 
-    private async overrideDelete(channel: Discord.TextChannel): Promise<void>
+    private async overrideDelete(channel: TextChannel): Promise<void>
     {
-        let messages: Discord.Collection<string, Discord.Message> = await channel.messages.fetch();
+        let messages: Collection<string, Message> = await channel.messages.fetch();
         if (this.delete_values[2] != "")
         {
             messages = messages.filter((message) =>
@@ -64,7 +64,7 @@ export class DeleteCommand extends Command
                 return username == this.delete_values[2];
             });
         }
-        let messagesToDelete: Array<Discord.Message> = new Array();
+        let messagesToDelete: Array<Message> = new Array();
         messages.forEach(message => { if (message != undefined) messagesToDelete.push(message) });
         while (messagesToDelete.length < this.delete_values[0]) 
         {
@@ -107,12 +107,15 @@ export class DeleteCommand extends Command
         console.log("");
     }
 
-    private getParams(map: Map<string, string>): [number, Discord.TextChannel, string]
+    private getParams(map: Map<string, string>, message: Message): [number, TextChannel, string]
     {
         let messages = 10;
-        let channel: Discord.TextChannel = undefined;
+        let channel: TextChannel = undefined;
         let username = "";
-        if (this.message.channel instanceof Discord.TextChannel) channel = this.message.channel;
+        if (message.channel instanceof TextChannel)
+        {
+            channel = message.channel;
+        }
         map.forEach((value, key) =>
         {
             switch (key)
@@ -133,7 +136,7 @@ export class DeleteCommand extends Command
                     }
                     break;
                 case "c":
-                    let resolvedChannel = this.resolveTextChannel(value);
+                    let resolvedChannel = this.resolveTextChannel(value, message.guild.channels);
                     if (resolvedChannel)
                     {
                         channel = resolvedChannel;

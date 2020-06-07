@@ -1,65 +1,64 @@
-import Discord = require('discord.js');
 import { Command } from "../Command";
 import { Printer } from '../../../console/Printer';
 import { Bot } from '../../Bot';
+import { Message, Snowflake, SnowflakeUtil, MessageEmbed } from 'discord.js';
 
 export class ReplyCommand extends Command
 {
-    private values: [string, Discord.Snowflake];
+    private values: [string, Snowflake];
 
-    public constructor(message: Discord.Message, bot: Bot)
+    public constructor(bot: Bot)
     {
-        super("reply command", message, bot);
-        let content = message.content;
-        let tac = false;
-        for (var i = 0; i < content.length && !tac; i++)
-        {
-            if (content[i] == "-") tac = true;
-        }
-        if (tac)
-            this.values = this.getParams(this.parseMessage());
-        else
-            this.getFastParams(content);
-
+        super("reply command", bot);
     }
 
-    public async execute(): Promise<void> 
+    public async execute(message: Message): Promise<void> 
     {
+        if (!message.content.match(/([-])/g))
+        {
+            this.values = this.getParams(this.parseMessage(message));
+        }
+        else
+        {
+            this.getFastParams(message);
+        }
         console.log(Printer.title("reply"));
         // fetch message
-        let replyMessage = await this.message.channel.messages.fetch(this.values[1]);
-        if (replyMessage instanceof Discord.Message)
+        let replyMessage = await message.channel.messages.fetch(this.values[1]);
+        if (replyMessage instanceof Message)
         {
             // good to go
             console.log(Printer.args(["message id", "reply content"], [this.values[1], this.values[0]]));
-            let author = this.message.author.tag;
+            let author = message.author.tag;
             let user = replyMessage.author.tag;
             let embed = this.buildEmbed(author, user);
-            this.message.reply(embed)
+            message.reply(embed)
                 .catch(console.error);
         }
         else
+        {
             console.error(Printer.warn("Message not found"));
+        }
     }
 
-    private getFastParams(content: string)
+    private getFastParams(message: Message)
     {
         // get content
-        content = content.substr(3);
+        let content = message.content.substr(3);
         // fetch last message id not you
-        let lastMessage = this.message.channel.lastMessage;
+        let lastMessage = message.channel.lastMessage;
         let lastMessageID = lastMessage.id;
-        if (lastMessage.author.tag == this.message.author.tag)
+        if (lastMessage.author.tag == message.author.tag)
         {
             lastMessage = undefined;
         }
         this.values = [content, lastMessageID];
     }
 
-    private getParams(args: Map<string, string>): [string, Discord.Snowflake]
+    private getParams(args: Map<string, string>): [string, Snowflake]
     {
         let content: string = "";
-        let snowflake: Discord.Snowflake;
+        let snowflake: Snowflake;
         args.forEach((value, key) =>
         {
             switch (key)
@@ -67,9 +66,11 @@ export class ReplyCommand extends Command
                 case "id":
                     try
                     {
-                        let desconstructedSnowflake = Discord.SnowflakeUtil.deconstruct(value);
+                        let desconstructedSnowflake = SnowflakeUtil.deconstruct(value);
                         if (desconstructedSnowflake)
+                        {
                             snowflake = value;
+                        }
                     }
                     catch (e)
                     {
@@ -85,9 +86,9 @@ export class ReplyCommand extends Command
         return [content, snowflake];
     }
 
-    private buildEmbed(author: string, user: string): Discord.MessageEmbed
+    private buildEmbed(author: string, user: string): MessageEmbed
     {
-        return new Discord.MessageEmbed()
+        return new MessageEmbed()
             .setColor(Math.floor(Math.random() * 16777215))
             .addField("", `${this.values[0]}`, true)
             .setFooter(`${author} replying to ${user}`);

@@ -2,49 +2,53 @@ import ytdl = require('ytdl-core');
 import { Bot } from "../../Bot";
 import { Command } from "../Command";
 import { Printer } from "../../../console/Printer";
-import { PlayLogger } from "../logger/loggers/PlayLogger";
+import { PlayLogger } from '../../logger/loggers/PlayLogger';
 import { EmbedFactory } from "../factory/EmbedFactory";
 import { YoutubeModule, SearchResults } from "./explore/youtube/YoutubeModule";
-import { CommandSyntaxError } from "../../errors/customs/CommandSyntaxError";
-import { WrongArgumentError } from "../../errors/customs/WrongArgumentError";
+import { CommandSyntaxError } from "../../errors/exec_errors/CommandSyntaxError";
+import { WrongArgumentError } from "../../errors/exec_errors/WrongArgumentError";
 import { TokenReader, EmojiReader, FileSystem as fs } from "../../dal/Readers";
 import
     {
         Message, MessageEmbed,
         VoiceChannel, VoiceConnection,
         StreamDispatcher,
-        EmbedField
+        EmbedField,
+        GuildChannelManager
     } from "discord.js";
 
 export class PlayCommand extends Command
 {
+    private message: Message;
     private connection: VoiceConnection;
     private dispacher: StreamDispatcher;
     private voiceChannel: VoiceChannel;
     private videos: Array<string> = new Array();
     private currentVideo: number = 0;
 
-    public constructor(message: Message, bot: Bot)
+    public constructor(bot: Bot)
     {
-        super("play-command", message, bot);
-        if (!this.message.content.match(/([-])/g))
-        {
-            // call to parseMessage() to log the command
-            this.parseMessage();
-            this.videos = this.getSimpleParams(message.content).videos;
-        }
-        else
-        {
-            let params = this.getParams(this.parseMessage());
-            this.voiceChannel = params.channel;
-            this.videos = params.videos;
-        }
+        super("play-command", bot);
     }
 
     public get channel(): VoiceChannel { return this.voiceChannel; }
 
-    public async execute(): Promise<void> 
+    public async execute(message: Message): Promise<void> 
     {
+        this.message = message;
+        if (!message.content.match(/([-])/g))
+        {
+            // call to parseMessage() to log the command
+            this.parseMessage(message);
+            this.videos = this.getSimpleParams(message.content).videos;
+        }
+        else
+        {
+            let params = this.getParams(this.parseMessage(message), message.guild.channels);
+            this.voiceChannel = params.channel;
+            this.videos = params.videos;
+        }
+
         console.log(Printer.title("play"));
         console.log(Printer.args(["value provided"],
             [
@@ -60,7 +64,7 @@ export class PlayCommand extends Command
         })
         if (this.videos.length > 0 && match)
         {
-            this.voiceChannel = this.voiceChannel == undefined ? this.message.member.voice.channel : this.voiceChannel;
+            this.voiceChannel = this.voiceChannel == undefined ? message.member.voice.channel : this.voiceChannel;
             if (this.voiceChannel)
             {
                 this.playStream();
@@ -122,10 +126,10 @@ export class PlayCommand extends Command
                     }
                     embed.addField(embedFields[i].name, embedFields[i].value, embedFields[i].inline);
                 }
-                this.message.reply(embeds[0]);
+                message.reply(embeds[0]);
                 for (var n = 1; n < embeds.length; n++)
                 {
-                    this.message.channel.send(embeds[n]);
+                    message.channel.send(embeds[n]);
                 }
             }
             else
@@ -141,12 +145,12 @@ export class PlayCommand extends Command
 
     public async join(): Promise<VoiceConnection>
     {
-        let promise: VoiceConnection;
+        let connection: VoiceConnection;
         if (this.voiceChannel.joinable)
         {
-            promise = await this.voiceChannel.join();
+            connection = await this.voiceChannel.join();
         }
-        return promise;
+        return connection;
     }
 
     public leave(): void
@@ -249,7 +253,7 @@ export class PlayCommand extends Command
         return { videos: params };
     }
 
-    private getParams(args: Map<string, string>): Params
+    private getParams(args: Map<string, string>, manager: GuildChannelManager): Params
     {
         let videos = new Array<string>();
         let channel: VoiceChannel;
@@ -268,7 +272,7 @@ export class PlayCommand extends Command
                     }
                     break;
                 case "c":
-                    let c = this.resolveChannel(v);
+                    let c = this.resolveChannel(v, manager);
                     if (c && c instanceof VoiceChannel)
                     {
                         channel = c;

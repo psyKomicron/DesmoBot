@@ -1,27 +1,29 @@
-import { Message, MessageEmbed } from 'discord.js';
-import { Command } from "../Command";
 import { Bot } from "../../Bot";
-import { CommandSyntaxError } from '../../errors/customs/CommandSyntaxError';
-import { Explorer } from './explore/Explorer';
-import { WikiExplorer } from './explore/WikiExplorer';
 import { Printer } from '../../../console/Printer';
+import { Command } from "../Command";
+import { Explorer } from './explore/Explorer';
 import { YTExplorer } from './explore/YTExplorer';
-import { WrongArgumentError } from '../../errors/customs/WrongArgumentError';
+import { WikiExplorer } from './explore/WikiExplorer';
+import { Message, MessageEmbed, TextChannel } from 'discord.js';
+import { CommandSyntaxError } from '../../errors/exec_errors/CommandSyntaxError';
+import { WrongArgumentError } from '../../errors/exec_errors/WrongArgumentError';
 
 
 export class ExploreCommand extends Command
 {
+    private channel: TextChannel;
     private keyword: string;
     private domainName: string;
 
-    public constructor(message: Message, bot: Bot)
+    public constructor(bot: Bot)
     {
-        super("explore", message, bot);
-        this.getParams(this.parseMessage());
+        super("explore", bot);
     }
 
-    public async execute(): Promise<void>
+    public async execute(message: Message): Promise<void>
     {
+        this.channel = message.channel instanceof TextChannel ? message.channel : undefined;
+        this.getParams(this.parseMessage(message));
         console.log(Printer.title("explorer"));
         console.log(Printer.args(["keyword", "domain name"], [`${this.keyword}`, `${this.domainName}`]));
         let e: Explorer;
@@ -37,7 +39,7 @@ export class ExploreCommand extends Command
                 throw new WrongArgumentError(this);
         }
         e?.explore();
-        this.deleteMessage();
+        this.deleteMessage(message, 1000);
     }
 
     /**
@@ -46,7 +48,7 @@ export class ExploreCommand extends Command
      */
     public send(embed: MessageEmbed): Promise<Message>
     {
-        return this.message.channel.send(embed);
+        return this.channel.send(embed);
     }
 
     private getParams(args: Map<string, string>): void

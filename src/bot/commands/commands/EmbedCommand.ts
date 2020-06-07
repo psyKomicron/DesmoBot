@@ -1,30 +1,31 @@
-import Discord = require('discord.js');
-import { FileSystem as fs } from "../../dal/Readers";
+import { Bot } from '../../Bot';
+import { Printer } from '../../../console/Printer';
 import { Command } from '../Command';
 import { Downloader } from '../../../network/Downloader';
-import { Printer } from '../../../console/Printer';
-import { JSONParser } from '../../dal/json/JSONParser';
-import { Bot } from '../../Bot';
 import { EmbedFactory } from '../factory/EmbedFactory';
+import { FileSystem as fs } from "../../dal/Readers";
+import { Message, TextChannel, GuildChannelManager, Channel } from 'discord.js';
 
 export class EmbedCommand extends Command
 {
-    private values: [Discord.TextChannel, boolean]
+    private values: [TextChannel, boolean]
 
-    public constructor(message: Discord.Message, bot: Bot)
+    public constructor(bot: Bot)
     {
-        super("embed builder", message, bot);
-        this.values = this.getParams(this.parseMessage());
-        if (this.values[0] == undefined)
-            throw "Channel cannot be resolved";
+        super("embed builder", bot);
     }
 
-    public async execute(): Promise<void> 
+    public async execute(message: Message): Promise<void> 
     {
+        this.values = this.getParams(this.parseMessage(message), message.channel, message.guild.channels);
+        if (this.values[0] == undefined)
+        {
+            throw "Channel cannot be resolved";
+        }
         // 1 -get & download file
         // 2 -check message & parse
         let fileUrl: string;
-        this.message.attachments.forEach(value =>
+        message.attachments.forEach(value =>
         {
             if (value.url.endsWith(".json")) fileUrl = value.url;
         });
@@ -82,14 +83,13 @@ export class EmbedCommand extends Command
             throw new Error("No valid uri/url for the json file");
         }
         // 3 -delete original message with 1 sec delay
-        if (this.message.deletable && this.values[1])
-            this.message.delete({ timeout: 1000 });
+        this.deleteMessage(message, 1000);
     }
 
-    private getParams(args: Map<string, string>): [Discord.TextChannel, boolean]
+    private getParams(args: Map<string, string>, defaultChannel: Channel, defaultManager: GuildChannelManager): [TextChannel, boolean]
     {
         let willDelete: boolean = false;
-        let channel: Discord.TextChannel = this.message.channel instanceof Discord.TextChannel ? this.message.channel : undefined;
+        let channel: TextChannel = defaultChannel instanceof TextChannel ? defaultChannel : undefined;
         args.forEach((value, key) =>
         {
             switch (key)
@@ -98,8 +98,10 @@ export class EmbedCommand extends Command
                     willDelete = true;
                     break;
                 case "c":
-                    if (this.resolveTextChannel(value))
-                        channel = this.resolveTextChannel(value);
+                    if (this.resolveTextChannel(value, defaultManager))
+                    {
+                        channel = this.resolveTextChannel(value, defaultManager);
+                    }
                     break;
                 default:
             }

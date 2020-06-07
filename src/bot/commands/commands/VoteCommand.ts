@@ -1,30 +1,38 @@
-import Discord = require('discord.js');
+import { Bot } from '../../Bot';
+import { Printer } from '../../../console/Printer';
 import { Command } from '../Command';
 import { EmojiReader } from '../../dal/Readers';
-import { Printer } from '../../../console/Printer';
-import { Bot } from '../../Bot';
-import { WrongArgumentError } from '../../errors/customs/WrongArgumentError';
-import { VoteLogger } from '../logger/loggers/VoteLogger';
+import { VoteLogger } from '../../logger/loggers/VoteLogger';
+import { WrongArgumentError } from '../../errors/exec_errors/WrongArgumentError';
+import
+    {
+        Message, MessageReaction, MessageEmbed,
+        User,
+        ReactionCollector,
+        Snowflake, SnowflakeUtil,
+        Emoji,
+        Channel, TextChannel
+    } from 'discord.js';
 
 export class VoteCommand extends Command
 {
-    private voteMessage: Discord.Message;
-    private messageEmbed: Discord.MessageEmbed;
-    private collector: Discord.ReactionCollector;
-    private votes: Map<Discord.User, Discord.MessageReaction> = new Map();
-    private reactions: Map<Discord.MessageReaction, Array<Discord.User>> = new Map();
+    private voteMessage: Message;
+    private messageEmbed: MessageEmbed;
+    private collector: ReactionCollector;
+    private votes: Map<User, MessageReaction> = new Map();
+    private reactions: Map<MessageReaction, Array<User>> = new Map();
     // values
     private timeout: number;
     private _title: string;
-    private channel: Discord.Channel;
-    private hostMessageID: Discord.Snowflake;
-    private emojis: Array<Discord.Emoji> = new Array();
+    private channel: Channel;
+    private hostMessageID: Snowflake;
+    private emojis: Array<Emoji> = new Array();
     private displayUsers: boolean;
     private usingEmbed: boolean = false;
 
-    public constructor(message: Discord.Message, bot: Bot)
+    public constructor(bot: Bot)
     {
-        super("vote", message, bot);
+        super("vote", bot);
     }
 
     public get title(): string 
@@ -32,16 +40,19 @@ export class VoteCommand extends Command
         return this._title;
     }
 
-    public async execute(): Promise<void> 
+    public async execute(message: Message): Promise<void> 
     {
-        this.getParams(this.parseMessage());
-        if (this.message.deletable)
-            this.message.delete({ timeout: 100 });
+        this.getParams(this.parseMessage(message), message);
+        if (!this.channel)
+        {
+            this.channel = message.channel;
+        }
+        this.deleteMessage(message);
         console.log(Printer.title("starting vote"));
         console.log(Printer.args(
             ["timeout", "vote reason", "vote channel id", "holding message (id)"],
             [`${this.timeout}`, this.title, this.channel?.id, `${this.hostMessageID}`]));
-        if (this.channel instanceof Discord.TextChannel)
+        if (this.channel instanceof TextChannel)
         {
             let logger = new VoteLogger();
             this.bot.logger.addLogger(logger);
@@ -57,33 +68,34 @@ export class VoteCommand extends Command
             }
             if (!this.hostMessageID)
             {
-                this.messageEmbed = new Discord.MessageEmbed()
+                this.messageEmbed = new MessageEmbed()
                     .setTitle(this.title)
                     .addField("Time limit", voteTime)
                     .setColor(Math.floor(Math.random() * 16777215))
                     .setFooter("Vote id : " + id);
-                this.voteMessage = await (this.channel as Discord.TextChannel)?.send(this.messageEmbed);
-                this.emojis.push(new Discord.Emoji(this.bot.client, { name: EmojiReader.getEmoji("green_check") }));
-                this.emojis.push(new Discord.Emoji(this.bot.client, { name: EmojiReader.getEmoji("green_cross") }));
+
+                this.voteMessage = await (this.channel as TextChannel)?.send(this.messageEmbed);
+                this.emojis.push(new Emoji(this.bot.client, { name: EmojiReader.getEmoji("green_check") }));
+                this.emojis.push(new Emoji(this.bot.client, { name: EmojiReader.getEmoji("green_cross") }));
             }
             else
             {
                 this.usingEmbed = true;
-                let hostMessage = await this.message.channel.messages.fetch(this.hostMessageID);
+                let hostMessage = await message.channel.messages.fetch(this.hostMessageID);
                 if (hostMessage.embeds.length > 0)
                 {
                     this.messageEmbed = hostMessage.embeds[0];
                     this.messageEmbed.fields.forEach(field =>
                     {
-                        let emoji: Discord.Emoji;
+                        let emoji: Emoji;
                         try
                         {
-                            emoji = new Discord.Emoji(this.bot.client, { name: field.name });
+                            emoji = new Emoji(this.bot.client, { name: field.name });
                         } catch (e)
                         {
                             try
                             {
-                                emoji = new Discord.Emoji(this.bot.client, { name: field.value });
+                                emoji = new Emoji(this.bot.client, { name: field.value });
                             }
                             catch (e) { }
                         }
@@ -99,9 +111,9 @@ export class VoteCommand extends Command
             if (this.voteMessage.author.tag == this.bot.client.user.tag)
             {
                 var collector = this.voteMessage.createReactionCollector(
-                    (reaction: Discord.MessageReaction, user: Discord.User) => !user.bot,
+                    (reaction: MessageReaction, user: User) => !user.bot,
                     { time: this.timeout == undefined ? this.timeout : this.timeout * 1000, dispose: true });
-                collector.on('collect', (reaction: Discord.MessageReaction, user: Discord.User) =>
+                collector.on('collect', (reaction: MessageReaction, user: User) =>
                 {
                     this.votes.set(user, reaction);
                     if (this.reactions.has(reaction))
@@ -110,16 +122,16 @@ export class VoteCommand extends Command
                     }
                     else
                     {
-                        this.reactions.set(reaction, new Array<Discord.User>());
+                        this.reactions.set(reaction, new Array<User>());
                         this.reactions.get(reaction).push(user);
                     }
                 });
-                collector.on('remove', (reaction: Discord.MessageReaction, user: Discord.User) =>
+                collector.on('remove', (reaction: MessageReaction, user: User) =>
                 {
                     this.votes.delete(user);
                     //remove from array
                     let users = this.reactions.get(reaction);
-                    let newUsers = new Array<Discord.User>();
+                    let newUsers = new Array<User>();
                     users.forEach(value =>
                     {
                         if (value.tag != user.tag)
@@ -131,7 +143,7 @@ export class VoteCommand extends Command
                 {
                     this.emit("end");
                     this.voteMessage.edit("**Vote ended !**");
-                    let embed = new Discord.MessageEmbed()
+                    let embed = new MessageEmbed()
                         .setColor(this.messageEmbed.color)
                         .setTitle("Results for " + this.messageEmbed.title);
                     //copy old embed
@@ -186,13 +198,13 @@ export class VoteCommand extends Command
         }
     }
 
-    private getParams(map: Map<string, string>): void
+    private getParams(map: Map<string, string>, message: Message): void
     {
         let timeout: number = 60;
         let title: string = "Yes/No";
-        let channel: Discord.Channel = this.message.channel;
-        let message: Discord.Snowflake;
-        let reactions: Array<Discord.Emoji> = new Array();
+        let channel: Channel;
+        let messageID: Snowflake;
+        let reactions: Array<Emoji> = new Array();
         let displayUsers = false;
         map.forEach((value, key) =>
         {
@@ -201,34 +213,38 @@ export class VoteCommand extends Command
                 case "title":
                 case "r":
                     if (value != "")
+                    {
                         title = value;
+                    }
                     break;
                 case "timeout":
                 case "n":
                     if (!Number.isNaN(Number.parseInt(value)))
+                    {
                         timeout = Number.parseInt(value);
+                    }
                     else if (value == "nolimit")
+                    {
                         timeout = undefined;
+                    }
                     break;
                 case "channel":
                 case "c":
-                    let resolvedChannel = this.message.guild.channels.resolve(value);
-                    if (resolvedChannel && resolvedChannel instanceof Discord.TextChannel)
-                        channel = resolvedChannel;
+                    channel = this.resolveTextChannel(value, message.guild.channels);
                     break;
                 case "message":
                 case "m":
                     try
                     {
-                        let desconstructedSnowflake = Discord.SnowflakeUtil.deconstruct(value);
+                        let desconstructedSnowflake = SnowflakeUtil.deconstruct(value);
                         if (desconstructedSnowflake)
                         {
-                            message = value;
+                            messageID = value;
                         }
                     }
                     catch (e)
                     {
-                        message = undefined;
+                        messageID = undefined;
                     }
                     break;
                 case "reactions":
@@ -237,7 +253,7 @@ export class VoteCommand extends Command
                     {
                         try
                         {
-                            reactions.push(new Discord.Emoji(this.bot.client, emoji as Object));
+                            reactions.push(new Emoji(this.bot.client, emoji as Object));
                         } catch (error) { }
                     })
                     break;
@@ -249,7 +265,7 @@ export class VoteCommand extends Command
         this.timeout = timeout;
         this._title = title;
         this.channel = channel;
-        this.hostMessageID = message;
+        this.hostMessageID = messageID;
         this.emojis = reactions;
         this.displayUsers = displayUsers;
     }

@@ -1,17 +1,19 @@
-import Discord = require('discord.js');
-import { Command } from "../Command";
 import { Bot } from '../../Bot';
+import { Command } from "../Command";
+import { Message, MessageEmbed } from 'discord.js';
+import { DeprecatedCommandError } from "../../errors/exec_errors/DeprecatedCommandError";
 
 export class HelpCommand extends Command
 {
-    public constructor(message: Discord.Message, bot: Bot)
+    public constructor(bot: Bot)
     {
-        super("help", message, bot);
+        throw new DeprecatedCommandError();
+        super("help", bot);
     }
 
-    public async execute(): Promise<void> 
+    public async execute(message: Message): Promise<void> 
     {
-        let embed = new Discord.MessageEmbed()
+        let embed = new MessageEmbed()
             .setTitle("Help")
             .setColor(0xff0000)
             .setDescription("Help page for Julie")
@@ -19,7 +21,7 @@ export class HelpCommand extends Command
             .addFields(
                 { name: "Link", value: "https://github.com/psyKomicron/Julie/blob/master/README.md" }
             );
-        this.message.channel.send(embed);
+        message.channel.send(embed);
     }
 
     private get voteHelp(): string

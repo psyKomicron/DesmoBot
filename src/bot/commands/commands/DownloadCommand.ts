@@ -5,8 +5,8 @@ import { Downloader } from '../../../network/Downloader';
 import { ProgressBar } from '../../../console/effects/ProgressBar';
 import { EmbedFactory } from '../factory/EmbedFactory';
 import { FileType, Bot } from '../../Bot';
-import { WrongArgumentError } from "../../errors/customs/WrongArgumentError";
-import { CommandSyntaxError } from '../../errors/customs/CommandSyntaxError';
+import { WrongArgumentError } from "../../errors/exec_errors/WrongArgumentError";
+import { CommandSyntaxError } from '../../errors/exec_errors/CommandSyntaxError';
 import { EmojiReader, FileSystem as fs } from '../../dal/Readers';
 import { Channel, Message, TextChannel, Snowflake, Collection } from 'discord.js';
 
@@ -14,14 +14,14 @@ export class DownloadCommand extends Command
 {
     private values: Params;
 
-    public constructor(message: Message, bot: Bot)
+    public constructor(bot: Bot)
     {
-        super("download", message, bot);
-        this.values = this.getParams(this.parseMessage());
+        super("download", bot);
     }
 
-    public async execute(): Promise<void> 
+    public async execute(message: Message): Promise<void> 
     {
+        this.values = this.getParams(this.parseMessage(message), message);
         if (!this.values.directDownload)
         {
             let limit = this.values.limit;
@@ -36,7 +36,7 @@ export class DownloadCommand extends Command
             {
                 name = channel.name;
             }
-            this.message.react(EmojiReader.getEmoji("thinking"));
+            message.react(EmojiReader.getEmoji("thinking"));
             console.log(Printer.title("initiating download"));
             console.log(Printer.args(
                 ["downloading", "file type", "channel"],
@@ -45,13 +45,13 @@ export class DownloadCommand extends Command
             if (limit > 250)
             {
                 console.log(Printer.warn("\n\t/!\\ WARNING : downloading over 250 files can fail /!\\ \n"));
-                this.message.react(EmojiReader.getEmoji("warning"));
+                message.react(EmojiReader.getEmoji("warning"));
             }
             this.initiateDownload(limit, channel)
                 .then(() =>
                 {
-                    this.message.react(EmojiReader.getEmoji("green_check"));
-                    if (this.message.deletable) this.message.delete({ timeout: 2000 });
+                    message.react(EmojiReader.getEmoji("green_check"));
+                    this.deleteMessage(message, 2000);
                 });
         }
         else
@@ -65,14 +65,14 @@ export class DownloadCommand extends Command
                 ));
                 try
                 {
-                    this.message.react(EmojiReader.getEmoji("thinking"));
+                    message.react(EmojiReader.getEmoji("thinking"));
                     ytdl(this.values.directDownloadURI, { quality: "highestaudio" })
                         .pipe(fs.createWriteStream("./files/downloads/file.mp3", { flags: "w" }))
                             .on("finish", () =>
                             {
                                 console.log("Finished downloading file");
-                                this.message.react(EmojiReader.getEmoji("green_check"));
-                                this.deleteMessage(3000);
+                                message.react(EmojiReader.getEmoji("green_check"));
+                                this.deleteMessage(message, 3000);
                                 let embed = EmbedFactory.build({
                                     color: 16711680,
                                     description: "Video",
@@ -93,7 +93,7 @@ export class DownloadCommand extends Command
                             });
                 } catch (error)
                 {
-                    this.message.react(EmojiReader.getEmoji("red_cross"));
+                    message.react(EmojiReader.getEmoji("red_cross"));
                     console.error(error);
                 }
             }
@@ -220,11 +220,11 @@ export class DownloadCommand extends Command
      * this.initiateDownload method.
      * @param command content to parse (usually a message content)
      */
-    private getParams(map: Map<string, string>): Params
+    private getParams(map: Map<string, string>, message: Message): Params
     {
         let limit = 50;
         let type = FileType.IMG;
-        let channel: Channel = this.message.channel;
+        let channel: Channel = message.channel;
         let directDownload: boolean = false;
         let directDownloadURI: string;
         map.forEach((value, key) =>
@@ -241,9 +241,9 @@ export class DownloadCommand extends Command
                     }
                     break;
                 case "c":
-                    if (this.resolveTextChannel(value))
+                    if (this.resolveTextChannel(value, message.guild.channels))
                     {
-                        channel = this.resolveTextChannel(value);
+                        channel = this.resolveTextChannel(value, message.guild.channels);
                     }
                     break;
                 case "v":

@@ -1,4 +1,3 @@
-import { Message } from 'discord.js';
 import { Bot } from '../../Bot';
 import { Command } from '../Command';
 import { DownloadCommand } from '../commands/DownloadCommand';
@@ -14,49 +13,48 @@ import { PlayCommand } from '../commands/PlayCommand';
 
 export class CommandFactory
 {
-    // a b c d e f g h i j k l m n o p q r s t u v w x y z
-    public static create(type: string, message: Message, bot: Bot): Command
+    public static create(type: string, bot: Bot): Command
     {
         let command: Command = undefined;
         switch (type)
         {
             case "dl":
             case "download":
-                command = new DownloadCommand(message, bot);
+                command = new DownloadCommand(bot);
                 break;
             case "d":
             case "delete":
-                command = new DeleteCommand(message, bot);
+                command = new DeleteCommand(bot);
                 break;
             case "embed":
-                command = new EmbedCommand(message, bot);
+                command = new EmbedCommand(bot);
                 break;
             case "e":
             case "explore":
-                command = new ExploreCommand(message, bot);
+                command = new ExploreCommand(bot);
                 break;
             case "p":
             case "play":
-                command = new PlayCommand(message, bot);
+                command = new PlayCommand(bot);
                 break;
             case "h":
             case "help":
-                command = new HelpCommand(message, bot);
+                command = new HelpCommand(bot);
                 break;
             case "r":
             case "reply":
-                command = new ReplyCommand(message, bot);
+                command = new ReplyCommand(bot);
                 break;
             case "t":
             case "test":
-                command = new TestCommand(message, bot);
+                command = new TestCommand(bot);
                 break;
             case "v":
             case "vote":
-                command = new VoteCommand(message, bot);
+                command = new VoteCommand(bot);
                 break;
             default:
-                command = new DefaultCommand(message, bot);
+                command = new DefaultCommand(bot);
                 break;
         }
         return command;
