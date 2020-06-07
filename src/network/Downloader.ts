@@ -73,7 +73,7 @@ export class Downloader
             req.on("error", err =>
             {
                 console.error(names[i] + " " + err);
-                fs.appendFile(`${this.path}/logs.txt`, names[i] + " -> error ");
+                fs.appendFile(`${this.path}/0_logs.txt`, names[i] + " -> error ");
                 fs.unlink(path);
             });
 
@@ -95,7 +95,7 @@ export class Downloader
         {
             downloadedItems += url + "\n";
         });
-        fs.appendFile(this.path + "logs.txt", `${downloadedItems}\n`)
+        fs.appendFile(this.path + "0_logs.txt", `${downloadedItems}\n`)
     }
 
     private renameFiles(names: Array<string>): Array<string>
