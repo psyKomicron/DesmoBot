@@ -32,11 +32,7 @@ export class ProgressBar
             readline.cursorTo(process.stdout, 0);
             process.stdout.write(bar);
         }
-        else
-        {
-            // make it to restart the bar
-            throw "Cannot start bar again";
-        }
+        else throw new Error("Cannot start bar again");
     }
 
     public update(value: number): void
@@ -54,7 +50,7 @@ export class ProgressBar
             process.stdout.write(`${Printer.warn(progress)} ${Printer.normal(round)}%\n`);
             this.lastValue = value;
         }
-        else throw "Bar has not been started";
+        else throw new Error("Bar has not been started");
     }
 
     public stop(): void
@@ -71,6 +67,6 @@ export class ProgressBar
             }
             process.stdout.write(`${Printer.info(progress)} ${Printer.normal(round)}%\n`);
         }
-        else throw "Bar has not been started";
+        else throw new Error("Bar has not been started");
     }
 }
