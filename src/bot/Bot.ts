@@ -1,16 +1,18 @@
-import { Client, Message } from 'discord.js';
 import readline = require('readline');
 import { clearInterval } from 'timers';
-import { Logger } from './commands/logger/Logger';
 import { Printer } from '../console/Printer';
+import { Logger } from './logger/Logger';
 import { CustomError } from './errors/CustomError';
+import { DefaultLogger } from './logger/loggers/DefaultLogger';
 import { CommandFactory } from './commands/factory/CommandFactory';
-import { TokenReader, FileSystem as fs, EmojiReader } from './dal/Readers';
-import { DefaultLogger } from './commands/logger/loggers/DefaultLogger';
+import { Client, Message } from 'discord.js';
+import { TokenReader, FileSystem as fs } from './dal/Readers';
+import { Moderator } from './commands/commands/moderation/Moderator';
 
 export class Bot 
 {
     // own
+    private moderator: Moderator;
     private _logger: Logger = new DefaultLogger();
     private prefix: string = "/";
     private readonly parents = ["psyKomicron#6527", "desmoclublyon#3056", "marquez#5719", "Onyxt#9305"];
@@ -20,13 +22,11 @@ export class Bot
 
     public constructor(id: NodeJS.Timeout) 
     {
+        this.moderator = Moderator.get(this);
         this.init(id);
     }
 
-    public get client(): Client
-    {
-        return this._client;
-    }
+    public get client(): Client { return this._client; }
 
     public get logger(): Logger { return this._logger; }
 
@@ -35,8 +35,12 @@ export class Bot
         // initiate directories
         const directories = ["./files", "./files/downloads", "./files/logs"];
         for (var i = 0; i < directories.length; i++)
+        {
             if (!fs.exists(directories[i]))
+            {
                 fs.mkdir(directories[i]);
+            }
+        }
         // initiate bot
         this._client.on("ready", () =>
         {
@@ -55,12 +59,28 @@ export class Bot
 
     private onMessage(message: Message): void 
     {
+        // asynchronously moderates a message
+        try
+        {
+            this.moderator.execute(message);
+        } catch (error)
+        {
+            if (error instanceof CustomError)
+            {
+                console.error(error.message);
+            }
+            else
+            {
+                console.error(error);
+            }
+        }
         let content = message.content;
         if (content.startsWith(this.prefix) && this.parents.includes(message.author.tag))
         {
             console.log("\ncommand requested by : " + Printer.info(message.author.tag));
             let substr = 0;
             let name = "";
+            // replace with a regex
             while (substr < content.length && content[substr] != "-" && content[substr] != " ")
             {
                 name += content[substr];
@@ -71,8 +91,8 @@ export class Bot
                 let handled = this.logger.handle(message);
                 if (!handled)
                 {
-                    let command = CommandFactory.create(name.substr(1), message, this);
-                    command.execute()
+                    let command = CommandFactory.create(name.substr(1), this);
+                    command.execute(message)
                         .catch(error =>
                         {
                             if (error instanceof CustomError)
