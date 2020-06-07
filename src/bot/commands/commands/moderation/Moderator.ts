@@ -1,9 +1,9 @@
-import { GuildModeratorProxy } from "./GuildModeratorProxy";
-import { Message, User } from "discord.js";
-import { Command } from "../../Command";
 import { Bot } from "../../../Bot";
+import { Command } from "../../Command";
 import { Printer } from "../../../../console/Printer";
 import { CustomError } from "../../../errors/CustomError";
+import { Message, User } from "discord.js";
+import { GuildModeratorProxy } from "./GuildModeratorProxy";
 
 export class Moderator extends Command
 {
@@ -35,8 +35,7 @@ export class Moderator extends Command
         try
         {
             this.guildModerator.handle(message);
-        }
-        catch (error)
+        } catch (error)
         {
             if (error instanceof CustomError)
             {
@@ -54,13 +53,13 @@ export class Moderator extends Command
         switch (status)
         {
             case ResponseStatus.CLEAN:
-                console.log(Printer.info("CLEAN"))
+                console.log(Printer.info("CLEAN"));
                 break;
             case ResponseStatus.WARN:
-                console.log(Printer.info("WARNING !"))
+                console.log(Printer.info("WARNING !"));
                 break;
             case ResponseStatus.BAN:
-                console.log(Printer.info("BANNED !"))
+                console.log(Printer.info("BANNED !"));
                 break;
         }
     }

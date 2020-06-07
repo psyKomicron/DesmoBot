@@ -1,7 +1,7 @@
-import { ResponseStatus, Moderator } from "./Moderator";
-import { GuildModerator } from "../../moderation/guildmods/GuildModerator";
-import { Message, Guild } from "discord.js";
+import { Moderator } from "./Moderator";
 import { CustomError } from "../../../errors/CustomError";
+import { Message, Guild } from "discord.js";
+import { GuildModerator } from "../../moderation/guildmods/GuildModerator";
 
 export class GuildModeratorProxy
 {
