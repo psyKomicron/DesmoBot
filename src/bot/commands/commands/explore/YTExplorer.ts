@@ -3,7 +3,7 @@ import { Printer } from '../../../../console/Printer';
 import { EmbedFactory } from '../../factory/EmbedFactory';
 import { YoutubeModule } from './youtube/YoutubeModule';
 import { TokenReader } from '../../../dal/Readers';
-import { YoutubeAPIKeyError } from "../../../errors/customs/YoutubeAPIKeyError";
+import { YoutubeAPIKeyError } from "../../../errors/exec_errors/YoutubeAPIKeyError";
 
 export class YTExplorer extends Explorer
 {
