@@ -1,7 +1,7 @@
 import { Logger } from "../Logger";
 import { Message } from "discord.js";
-import { PlayCommand } from "../../commands/PlayCommand";
-import { Printer } from "../../../../console/Printer";
+import { PlayCommand } from "../../commands/commands/PlayCommand";
+import { Printer } from "../../../console/Printer";
 
 export class PlayLogger extends Logger 
 {

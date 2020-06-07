@@ -1,5 +1,5 @@
-import { Logger } from "../Logger";
 import { Message } from "discord.js";
+import { Logger } from "../Logger";
 
 export class DefaultLogger extends Logger
 {
