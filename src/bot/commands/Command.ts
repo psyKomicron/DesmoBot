@@ -1,61 +1,66 @@
-import { FileSystem as fs } from "../dal/Readers";
-import { Message, TextChannel, GuildChannel} from 'discord.js';
 import { Bot } from "../Bot";
 import { EventEmitter } from "events";
+import { FileSystem as fs } from "../dal/Readers";
+import { Message, TextChannel, GuildChannel, GuildChannelManager} from 'discord.js';
 
 export abstract class Command extends EventEmitter
 {
     private static _commands: number = 0;
     private readonly _bot: Bot;
     private _name: string;
-    private _message: Message;
+    //private _message: Message;
 
-    protected constructor(name: string, message: Message, bot: Bot)
+    protected constructor(name: string, bot: Bot)
     {
         super();
         Command._commands++;
         this._bot = bot;
-        this._message = message;
         this._name = name;
     }
 
     /**Execute the command async */
-    public abstract async execute(): Promise<void>;
+    public abstract async execute(message: Message): Promise<void>;
+
+    //public abstract async execute(message: Message): Promise<void>;
 
     public static get commands(): number { return this._commands; }
 
     public get name(): string { return this._name; }
 
-    protected get message(): Message { return this._message; }
+    //protected get message(): Message { return this._message; }
 
     protected get bot(): Bot { return this._bot; }
 
 
     /**Delete the command message (here to avoid code redundancy) */
-    public deleteMessage(timeout: number = 100): void
+    public deleteMessage(message: Message, timeout: number = 100): void
     {
-        if (this.message && this.message.deletable)
+        if (message && message.deletable)
         {
-            this.message.delete({ timeout: timeout });
+            message.delete({ timeout: timeout });
         }
     }
 
     /**Parse the command message content to get parameters and returns a map of
      the arguments name paired with their values */
-    public parseMessage(message: Message = this._message): Map<string, string>
+    public parseMessage(message: Message): Map<string, string>
     {
-        // parse with args (-x -y...)
         let rawContent = message.content.substring(1);
-        // remove command name
         let substr = 0;
         while (substr < rawContent.length && rawContent[substr] != "-") { substr++; }
         let content = rawContent.substring(substr);
-        // check if commas are even
         let commas = 0;
         for (var j = 0; j < rawContent.length; j++)
-            if (rawContent[j] == "\"") commas++;
+        {
+            if (rawContent[j] == "\"")
+            {
+                commas++;
+            }
+        }
         if (commas % 2 != 0)
+        {
             throw new Error(`Command contains a space, but not incapsulated in \" \" (at character ${j + 1})`);
+        }
         let map = new Map<string, string>();
         let i = 0;
         while (i < content.length)
@@ -113,10 +118,10 @@ export abstract class Command extends EventEmitter
      * @param channelID string-Discord.Snowflake representing a Discord.TextChannel id.
      * @returns The resolved TextChannel
      */
-    public resolveTextChannel(channelID: string): TextChannel
+    public resolveTextChannel(channelID: string, manager: GuildChannelManager): TextChannel
     {
         let channel: TextChannel;
-        let resolvedChannel = this._message.guild.channels.resolve(channelID);
+        let resolvedChannel = manager.resolve(channelID);
         if (resolvedChannel && resolvedChannel instanceof TextChannel)
         {
             channel = resolvedChannel;
@@ -130,10 +135,10 @@ export abstract class Command extends EventEmitter
      * @param channelID string | Discord.Snowflake representing a Channel id.
      * @returns The resolved GuildChannel.
      */
-    public resolveChannel(channelID: string): GuildChannel
+    public resolveChannel(channelID: string, manager: GuildChannelManager): GuildChannel
     {
         let channel: GuildChannel;
-        let resolvedChannel = this._message.guild.channels.resolve(channelID);
+        let resolvedChannel = manager.resolve(channelID);
         if (resolvedChannel)
         {
             channel = resolvedChannel;
@@ -149,7 +154,7 @@ export abstract class Command extends EventEmitter
      * @param map Arguments of the command
      * @param message Message that launched this command.
      */
-    private writeLogs(map: Map<string, string>, message: Message)
+    private async writeLogs(map: Map<string, string>, message: Message): Promise<void>
     {
         const filepath = "./files/logs/";
         const name = "command_logs";
@@ -178,8 +183,8 @@ export abstract class Command extends EventEmitter
                     "name": this._name,
                     "arguments": data,
                     "command number": `${Command.commands}`,
-                    "message id": `${this.message.id}`,
-                    "message": this.message
+                    "message id": `${message.id}`,
+                    "message": message
                 }
             ],
             "date": [
