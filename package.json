@@ -21,7 +21,7 @@
     "express": "^4.17.1",
     "ffmpeg-static": "^4.2.2",
     "googleapis": "^51.0.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "request": "^2.88.2",
     "ytdl-core": "^2.1.5"
   },
